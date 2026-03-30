@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "361591049757",
+    "project_id": "floodwatch-f7896",
+    "storage_bucket": "floodwatch-f7896.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:361591049757:android:46dac67936cb0655ee40f4",
+        "android_client_info": {
+          "package_name": "com.example.floodwatch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDilHWapQnX63gCZC-bdCMvrk8ANFFnXfE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
