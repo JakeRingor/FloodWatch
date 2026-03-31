@@ -34,8 +34,8 @@ class HomeActivity : AppCompatActivity() {
 
             val selectedFragment: Fragment = when (item.itemId) {
                 R.id.navigation_home -> HomeFragment()
+                R.id.navigation_report -> ReportFragment()
                 R.id.navigation_profile -> ProfileFragment()
-                R.id.navigation_settings -> SettingsFragment()
                 else -> HomeFragment()
             }
 
