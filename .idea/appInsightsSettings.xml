@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.floodwatch" />
+                  <option name="mobileSdkAppId" value="1:361591049757:android:46dac67936cb0655ee40f4" />
+                  <option name="projectId" value="floodwatch-f7896" />
+                  <option name="projectNumber" value="361591049757" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
