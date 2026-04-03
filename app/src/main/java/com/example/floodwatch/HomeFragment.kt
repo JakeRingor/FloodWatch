@@ -27,7 +27,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private lateinit var lastUpdatedText: TextView
 
     // OpenWeatherMap API key
-    private val OPENWEATHER_API_KEY = "***REMOVED***"
+    val apiKey = BuildConfig.OPENWEATHER_API_KEY
 
     // Handler for auto-refresh
     private val refreshInterval = 3 * 60 * 1000L // 3 minutes
