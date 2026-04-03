@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">FloodWatch</string>
     <string name="google_maps_key">AIzaSyDOuzCVhnrFD3UhBjdJcbebi76hamwcMmw</string>
+    <string name="last_updated">Last updated: %1$s</string>
 </resources>

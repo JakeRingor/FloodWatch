@@ -27,7 +27,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private lateinit var lastUpdatedText: TextView
 
     // OpenWeatherMap API key
-    val apiKey = BuildConfig.OPENWEATHER_API_KEY
+    private val apiKey: String = BuildConfig.OPENWEATHER_API_KEY
 
     // Handler for auto-refresh
     private val refreshInterval = 3 * 60 * 1000L // 3 minutes
@@ -99,7 +99,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val tileProvider = object : UrlTileProvider(256, 256) {
             override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
                 return try {
-                    URL("https://tile.openweathermap.org/map/$layer/$zoom/$x/$y.png?appid=$OPENWEATHER_API_KEY")
+                    URL("https://tile.openweathermap.org/map/$layer/$zoom/$x/$y.png?appid=$apiKey")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     null
@@ -119,7 +119,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private fun updateLastUpdated() {
         val sdf = SimpleDateFormat("HH:mm:ss, dd MMM yyyy", Locale.getDefault())
         val currentTime = sdf.format(Date())
-        lastUpdatedText.text = "Last updated: $currentTime"
+        lastUpdatedText.text = getString(R.string.last_updated, currentTime)
     }
 
     // MapView lifecycle

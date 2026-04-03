@@ -20,7 +20,7 @@ android {
         buildConfigField(
             "String",
             "OPENWEATHER_API_KEY",
-            "\"${project.findProperty("OPENWEATHER_API_KEY") ?: "MISSING_KEY"}\""
+            "\"${project.findProperty("OPENWEATHER_API_KEY") ?: "YOUR_API_KEY_HERE"}\""
         )
     }
 
@@ -42,6 +42,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
