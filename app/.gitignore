@@ -1,1 +1,26 @@
-/build
+# Gradle build folder
+/build/
+
+# Android Studio IDE files
+.idea/
+
+# Gradle cache folder
+.gradle/
+
+# Local properties (SDK path, signing configs)
+local.properties
+
+# Android generated files
+*.iml
+*.apk
+*.ap_
+*.dex
+*.class
+*.jar
+*.keystore
+
+# Miscellaneous
+captures/
+output.json
+.externalNativeBuild/
+.cxx/
