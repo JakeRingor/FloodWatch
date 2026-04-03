@@ -161,8 +161,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun updateLastUpdated() {
-        val sdf = SimpleDateFormat("HH:mm:ss, dd MMM yyyy", Locale.getDefault())
-        lastUpdatedText.text = "Last updated: ${sdf.format(Date())}"
+        // Use 12-hour format with AM/PM
+        val sdf = SimpleDateFormat("hh:mm a, dd MMM yyyy", Locale.getDefault())
+        sdf.timeZone = TimeZone.getTimeZone("Asia/Manila") // PH time
+
+        val currentTime = sdf.format(Date())
+        lastUpdatedText.text = "Last updated: $currentTime"
     }
 
     override fun onResume() { super.onResume(); mapView.onResume() }
