@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.services)
+}
+
+// ── Load local.properties ──
+val localProperties = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        load(localPropsFile.inputStream())
+    }
 }
 
 android {
@@ -17,10 +27,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // ── Maps API Key → AndroidManifest ──
+        manifestPlaceholders["mapsApiKey"] =
+            localProperties.getProperty("MAPS_API_KEY") ?: ""
+
+        // ── OWM API Key → BuildConfig (Kotlin) ──
         buildConfigField(
             "String",
             "OPENWEATHER_API_KEY",
-            "\"${project.findProperty("OPENWEATHER_API_KEY") ?: "YOUR_API_KEY_HERE"}\""
+            "\"${localProperties.getProperty("OPENWEATHER_API_KEY") ?: ""}\""
         )
     }
 
@@ -57,7 +72,7 @@ dependencies {
     implementation("androidx.gridlayout:gridlayout:1.0.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
