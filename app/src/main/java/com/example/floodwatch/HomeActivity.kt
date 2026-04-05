@@ -9,7 +9,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.floodwatch.databinding.ActivityHomeBinding
-import com.google.firebase.auth.FirebaseAuth
+// ✅ TAMA NA IMPORT PARA SA V3 (Wala nang _tennert)
+import io.github.jan.supabase.auth.auth
 
 class HomeActivity : AppCompatActivity() {
 
@@ -22,26 +23,21 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Edge-to-edge insets
+        // Edge-to-edge insets setup
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        // ✅ Red dot badge on Alerts tab
+        // Red dot badge on Alerts tab
         val alertsBadge = binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts)
         alertsBadge.isVisible = true
         alertsBadge.backgroundColor = Color.RED
 
-        // ── Bottom Navigation ──────────────────────────────────
+        // Bottom Navigation logic
         binding.bottomNavigation.setOnItemSelectedListener { item ->
-
-            // Prevent re-loading the same fragment
-            if (
-                binding.bottomNavigation.selectedItemId == item.itemId &&
-                supportFragmentManager.findFragmentById(R.id.fragment_container) != null
-            ) {
+            if (binding.bottomNavigation.selectedItemId == item.itemId) {
                 return@setOnItemSelectedListener false
             }
 
@@ -49,7 +45,7 @@ class HomeActivity : AppCompatActivity() {
                 R.id.navigation_home          -> HomeFragment()
                 R.id.navigation_report        -> ReportFragment()
                 R.id.navigation_alerts        -> {
-                    alertsBadge.isVisible = false  // ✅ Hide badge when tapped
+                    alertsBadge.isVisible = false
                     AlertsFragment()
                 }
                 R.id.navigation_preparedness  -> PreparednessFragment()
@@ -57,17 +53,13 @@ class HomeActivity : AppCompatActivity() {
             }
 
             supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    android.R.anim.fade_in,
-                    android.R.anim.fade_out
-                )
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
                 .replace(R.id.fragment_container, selectedFragment)
                 .commit()
 
             true
         }
 
-        // Load default fragment on first launch
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, HomeFragment())
@@ -76,10 +68,11 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    // ── Auto-redirect to Login if signed out ───────────────────
     override fun onStart() {
         super.onStart()
-        if (FirebaseAuth.getInstance().currentUser == null) {
+        // ✅ Supabase v3 check for session
+        val session = SupabaseClient.client.auth.currentSessionOrNull()
+        if (session == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
         }

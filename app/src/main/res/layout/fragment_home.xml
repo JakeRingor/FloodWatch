@@ -101,6 +101,7 @@
 
             <!-- ── Current Status ── -->
             <TextView
+                android:id="@+id/textViewStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Current Status • Kingsville, ON"
@@ -135,24 +136,25 @@
                             android:id="@+id/textViewCondition"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Heavy Rain"
+                            android:text="Loading..."
                             android:textColor="#0052FF"
-                            android:textSize="40sp"
+                            android:textSize="32sp"
                             android:textStyle="bold" />
 
                         <ImageView
+                            android:id="@+id/imageViewWeatherIcon"
                             android:layout_width="30dp"
                             android:layout_height="30dp"
                             android:src="@drawable/ic_rain"
                             android:layout_marginStart="8dp"
-                            android:contentDescription="rain icon" />
+                            android:contentDescription="weather icon" />
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/textViewTemp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="22°C"
+                        android:text="--°C"
                         android:textColor="#0F2040"
                         android:textSize="38sp"
                         android:textStyle="bold"
@@ -162,7 +164,7 @@
                         android:id="@+id/textViewHumidity"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="88% Humidity"
+                        android:text="--% Humidity"
                         android:textColor="#5A7A99"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -643,7 +645,7 @@
                                     android:id="@+id/textViewRainfall"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="48"
+                                    android:text="--"
                                     android:textColor="#2563EB"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -696,7 +698,7 @@
                                     android:id="@+id/textViewWindSpeed"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="32"
+                                    android:text="--"
                                     android:textColor="#111827"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -758,7 +760,7 @@
                                     android:id="@+id/textViewActiveAlerts"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="03"
+                                    android:text="00"
                                     android:textColor="#EF4444"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -767,7 +769,7 @@
                                     android:layout_width="26dp"
                                     android:layout_height="26dp"
                                     android:src="@drawable/ic_warning"
-                                    android:tint="#EF4444"
+                                    app:tint="#EF4444"
                                     android:layout_marginStart="8dp"
                                     android:contentDescription="alert" />
                             </LinearLayout>
@@ -805,7 +807,7 @@
                                 android:id="@+id/textViewEvacStatus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="NONE"
+                                android:text="--"
                                 android:textColor="#0EA5E9"
                                 android:textSize="36sp"
                                 android:textStyle="bold" />

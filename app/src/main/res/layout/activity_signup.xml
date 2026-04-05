@@ -15,7 +15,6 @@
         android:padding="24dp"
         tools:context=".SignupActivity">
 
-        <!-- ── Logo + App Name ── -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -39,7 +38,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- ── Heading ── -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -58,7 +56,6 @@
             android:lineSpacingMultiplier="1.4"
             android:layout_marginBottom="20dp" />
 
-        <!-- ══════════ CARD ══════════ -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -73,7 +70,72 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <!-- Email label -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Full Name"
+                    android:textColor="#1E3A5F"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxStrokeColor="#191C1D"
+                    app:boxBackgroundColor="#F7FAFD"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextFullName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Name"
+                        android:inputType="textPersonName"
+                        android:textColor="#5A6268"
+                        android:textSize="13sp"
+                        android:padding="12dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Phone Number"
+                    android:textColor="#1E3A5F"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxStrokeColor="#191C1D"
+                    app:boxBackgroundColor="#F7FAFD"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="number"
+                        android:inputType="phone"
+                        android:textColor="#5A6268"
+                        android:textSize="13sp"
+                        android:padding="12dp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -83,7 +145,6 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Email input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -108,7 +169,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Password label -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -118,7 +178,6 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Password input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -145,7 +204,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Confirm Password label -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -155,7 +213,6 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Confirm Password input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -181,7 +238,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Terms & Conditions checkbox -->
                 <CheckBox
                     android:id="@+id/checkBoxTerms"
                     android:layout_width="match_parent"
@@ -192,7 +248,6 @@
                     android:buttonTint="#2563EB"
                     android:layout_marginBottom="18dp" />
 
-                <!-- Sign Up button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonSignUp"
                     android:layout_width="match_parent"
@@ -208,9 +263,6 @@
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-        <!-- ══════════ END CARD ══════════ -->
-
-        <!-- Already have an account row -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -236,36 +288,6 @@
                 android:focusable="true" />
         </LinearLayout>
 
-        <!-- Footer links -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="10dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="System Status"
-                android:textColor="#151D22"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="  ·  "
-                android:textColor="#8AACC8"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Privacy Policy"
-                android:textColor="#151D22"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-        <!-- Copyright -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

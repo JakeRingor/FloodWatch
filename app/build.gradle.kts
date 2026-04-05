@@ -3,7 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.services)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 // ── Load local.properties ──
@@ -27,25 +27,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ── Maps API Key → AndroidManifest ──
-        manifestPlaceholders["mapsApiKey"] =
-            localProperties.getProperty("MAPS_API_KEY") ?: ""
+        // ── Maps API Key ──
+        manifestPlaceholders["mapsApiKey"] = localProperties.getProperty("MAPS_API_KEY") ?: ""
 
-        // ── OWM API Key → BuildConfig (Kotlin) ──
-        buildConfigField(
-            "String",
-            "OPENWEATHER_API_KEY",
-            "\"${localProperties.getProperty("OPENWEATHER_API_KEY") ?: ""}\""
-        )
+        // ── BuildConfig Fields ──
+        buildConfigField("String", "OPENWEATHER_API_KEY", "\"${localProperties.getProperty("OPENWEATHER_API_KEY") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties.getProperty("SUPABASE_ANON_KEY") ?: ""}\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -61,7 +55,10 @@ android {
     }
 }
 
+// Sa app/build.gradle.kts, palitan ang buong dependencies block nito:
+
 dependencies {
+    // Standard Android Libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -70,13 +67,18 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.1.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("androidx.gridlayout:gridlayout:1.0.0")
+
+    // Supabase & Ktor (Dapat nandito ang mga ito)
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
+    implementation(libs.supabase.storage)
+    implementation(libs.ktor.client.android)
+
+    // Retrofit (Optional kung gagamitin pa)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.analytics)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

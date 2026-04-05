@@ -1,16 +1,18 @@
 package com.example.floodwatch
 
-data class WeatherResponse(
-    val weather: List<Weather>,
-    val main: Main
-)
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+
+
+@Serializable
 data class Weather(
     val main: String,
     val description: String,
     val icon: String
 )
 
+@Serializable
 data class Main(
     val temp: Double,
     val feels_like: Double,
@@ -18,4 +20,16 @@ data class Main(
     val temp_max: Double,
     val pressure: Int,
     val humidity: Int
+)
+
+@Serializable
+data class Wind(
+    val speed: Double
+)
+
+// <--- DAGDAG ITONG CLASS NA ITO PARA SA RAINFALL ACCURACY
+@Serializable
+data class Rain(
+    @SerialName("1h") // Ginagamit ito dahil "1h" ang tawag ng API sa field
+    val oneHour: Double = 0.0
 )
