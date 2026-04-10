@@ -9,7 +9,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.floodwatch.databinding.ActivityHomeBinding
-// ✅ TAMA NA IMPORT PARA SA V3 (Wala nang _tennert)
 import io.github.jan.supabase.auth.auth
 
 class HomeActivity : AppCompatActivity() {
@@ -42,14 +41,14 @@ class HomeActivity : AppCompatActivity() {
             }
 
             val selectedFragment: Fragment = when (item.itemId) {
-                R.id.navigation_home          -> HomeFragment()
-                R.id.navigation_report        -> ReportFragment()
-                R.id.navigation_alerts        -> {
+                R.id.navigation_home    -> HomeFragment()
+                R.id.navigation_report  -> ReportFragment()
+                R.id.navigation_alerts  -> {
                     alertsBadge.isVisible = false
                     AlertsFragment()
                 }
-                R.id.navigation_preparedness  -> PreparednessFragment()
-                else                          -> HomeFragment()
+                R.id.navigation_profile -> ProfileFragment()
+                else                    -> HomeFragment()
             }
 
             supportFragmentManager.beginTransaction()
@@ -70,7 +69,6 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // ✅ Supabase v3 check for session
         val session = SupabaseClient.client.auth.currentSessionOrNull()
         if (session == null) {
             startActivity(Intent(this, LoginActivity::class.java))
