@@ -9,7 +9,7 @@ import io.github.jan.supabase.realtime.Realtime
 object SupabaseClient {
     val client = createSupabaseClient(
         supabaseUrl = "https://jhjkfkgixkqbofehwwtn.supabase.co",
-        supabaseKey = "YOUR_ANON_KEY" 
+        supabaseKey = "sb_publishable_J2mD38t9sXunmzXOj9Wpug_l0B2ypVn"
     ) {
         install(Auth)
         install(Postgrest)
