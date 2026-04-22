@@ -55,20 +55,21 @@ android {
     }
 }
 
-// Sa app/build.gradle.kts, palitan ang buong dependencies block nito:
+
 
 dependencies {
     // Standard Android Libraries
+    implementation("com.google.android.material:material:1.12.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("androidx.gridlayout:gridlayout:1.0.0")
 
-    // Supabase & Ktor (Dapat nandito ang mga ito)
+
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)

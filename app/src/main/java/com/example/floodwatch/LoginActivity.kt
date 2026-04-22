@@ -1,6 +1,5 @@
 package com.example.floodwatch
 
-import android.content.Context // Import ito
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -33,7 +32,7 @@ class LoginActivity : AppCompatActivity() {
 
         // ── Login ──────────────────────────────────────────────
         binding.buttonLogin.setOnClickListener {
-            val email    = binding.editTextEmail.text.toString().trim()
+            val email = binding.editTextEmail.text.toString().trim()
             val password = binding.editTextPassword.text.toString().trim()
 
             if (email.isEmpty() || password.isEmpty()) {
@@ -51,19 +50,18 @@ class LoginActivity : AppCompatActivity() {
                         this.password = password
                     }
 
-                    // [SESSION PERSISTENCE] I-save natin na naka-login na ang user
-                    val sharedPref = getSharedPreferences("FloodWatchPrefs", Context.MODE_PRIVATE)
-                    with (sharedPref.edit()) {
-                        putBoolean("isLoggedIn", true)
-                        apply()
-                    }
-
+                    // ✅ WALA NANG SharedPreferences — SessionManager na ang bahala
                     startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                     finish()
+
                 } catch (e: Exception) {
                     binding.buttonLogin.isEnabled = true
                     binding.buttonLogin.text = "Login to Dashboard  →"
-                    Toast.makeText(this@LoginActivity, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Login failed: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -75,43 +73,65 @@ class LoginActivity : AppCompatActivity() {
         binding.textViewForgot.setOnClickListener {
             val email = binding.editTextEmail.text.toString().trim()
             if (email.isEmpty()) {
-                Toast.makeText(this, "Enter your email above to reset your password.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Enter your email above to reset your password.",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
             lifecycleScope.launch {
                 try {
                     SupabaseClient.client.auth.resetPasswordForEmail(email)
-                    Toast.makeText(this@LoginActivity, "Reset link sent to $email", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Reset link sent to $email",
+                        Toast.LENGTH_LONG
+                    ).show()
                 } catch (e: Exception) {
-                    Toast.makeText(this@LoginActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Failed: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
 
         binding.textViewStatus.setOnClickListener {
-            val url = "https://status.floodwatch.example.com"
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://status.floodwatch.example.com")
+                )
+            )
         }
 
         binding.textViewPrivacy.setOnClickListener {
-            val url = "https://floodwatch.example.com/privacy"
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://floodwatch.example.com/privacy")
+                )
+            )
         }
     }
 
     override fun onStart() {
         super.onStart()
 
-        // [SESSION CHECK] Gamit ang SharedPreferences para sigurado
-        val sharedPref = getSharedPreferences("FloodWatchPrefs", Context.MODE_PRIVATE)
-        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
+        // ✅ Kung galing sa logout, huwag mag-redirect — session cache baka hindi pa cleared
+        val fromLogout = intent.getBooleanExtra("from_logout", false)
+        if (fromLogout) return
 
-        // Check din natin sa Supabase para sure na valid ang session
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
-
-        if (isLoggedIn || session != null) {
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
+        try {
+            val session = SupabaseClient.client.auth.currentSessionOrNull()
+            if (session != null) {
+                startActivity(Intent(this, HomeActivity::class.java))
+                finish()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

@@ -14,6 +14,7 @@ import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -81,13 +82,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-
-        // Dito natin ilalagay ang Map sa Kingsville
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KINGSVILLE, 15f))
-
-        // Label update: Pwedeng ganito ang format
         binding.textViewStatus.text = "Kingsville • Rizal Weather"
-
         refreshData()
         handler.postDelayed(refreshRunnable, refreshInterval)
     }
@@ -96,7 +92,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         addWeatherOverlay(currentLayer)
         updateLastUpdated()
         fetchFloodReports()
-        // Dito natin kukunin ang Weather para sa buong Rizal
+        fetchFloodAlerts()                          // ✅ BAGONG DAGDAG
         fetchWeatherData(RIZAL_LAT, RIZAL_LON)
     }
 
@@ -105,7 +101,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             try {
                 val response = weatherApi.getWeather(lat, lon, apiKey)
                 _binding?.let { b ->
-                    // 1. Update Text Data
                     b.textViewTemp.text = "${response.main.temp.toInt()}°C"
                     b.textViewCondition.text = response.weather.firstOrNull()?.main ?: "--"
                     b.textViewHumidity.text = "${response.main.humidity}% Humidity"
@@ -114,13 +109,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val rainVal = response.rain?.oneHour ?: 0.0
                     b.textViewRainfall.text = rainVal.toInt().toString()
 
-                    // 2. Dynamic Icon Logic
                     val condition = response.weather.firstOrNull()?.main ?: ""
                     when {
-                        condition.contains("Rain", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
+                        condition.contains("Rain", true)  -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
                         condition.contains("Cloud", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
                         condition.contains("Clear", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
-                        else -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun) // Default
+                        else                              -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
                     }
                 }
             } catch (e: Exception) {
@@ -129,11 +123,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
+    // ✅ FIX: "reports" → "flood_reports"
     private fun fetchFloodReports() {
         lifecycleScope.launch {
             try {
                 val reports = SupabaseClient.client.postgrest
-                    .from("reports")
+                    .from("flood_reports")          // ✅ FIXED — dati "reports"
                     .select()
                     .decodeList<FloodReport>()
 
@@ -141,7 +136,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val count = reports.size
                     b.textViewActiveAlerts.text = String.format("%02d", count)
 
-                    // Update Evac Status base sa dami ng reports
                     if (count > 0) {
                         b.textViewEvacStatus.text = "READY"
                         b.textViewEvacStatus.setTextColor(android.graphics.Color.parseColor("#0EA5E9"))
@@ -163,6 +157,35 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 }
             } catch (e: Exception) {
                 Log.e("FloodWatch", "Supabase Error: ${e.message}")
+            }
+        }
+    }
+
+    // ✅ BAGONG FUNCTION — kumukuha ng active alerts mula flood_alerts table
+    private fun fetchFloodAlerts() {
+        lifecycleScope.launch {
+            try {
+                val alerts = SupabaseClient.client.postgrest
+                    .from("flood_alerts")
+                    .select {
+                        filter {
+                            eq("is_active", true)
+                        }
+                    }
+                    .decodeList<FloodAlert>()
+
+                _binding?.let { b ->
+                    if (alerts.isNotEmpty()) {
+                        val latest = alerts.first()
+                        b.textViewAlertTitle.text = latest.title
+                        b.textViewAlertDesc.text  = latest.message  // ✅ "message" hindi "description"
+                    } else {
+                        b.textViewAlertTitle.text = "No active alerts"
+                        b.textViewAlertDesc.text  = "All clear. No flood incidents reported."
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FloodWatch", "Alerts Error: ${e.message}")
             }
         }
     }

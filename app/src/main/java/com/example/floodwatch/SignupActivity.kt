@@ -14,9 +14,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-
-
 
 class SignupActivity : AppCompatActivity() {
 
@@ -76,29 +73,39 @@ class SignupActivity : AppCompatActivity() {
                         this.password = password
                     }
 
-                    // STEP 2: Kunin ang User ID (Sa v3, ito ang pinaka-reliable na paraan)
+                    // STEP 2: Kunin ang User ID
                     val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
 
                     if (userId != null) {
-                        // STEP 3: Insert sa profiles table
+                        // STEP 3: Upsert sa user_profiles table
+                        // ✅ Upsert — safe kahit may auto-create trigger na
                         val profile = UserProfile(
                             id = userId,
-                            full_name = fullName,
-                            phone_number = phone,
+                            fullName = fullName,
+                            phoneNumber = phone,
                             address = ""
                         )
 
-                        // Ginagamit ang postgrest extension para sa insert
-                        SupabaseClient.client.from("profiles").insert(profile)
+                        SupabaseClient.client
+                            .from("user_profiles")
+                            .upsert(profile)
 
-                        Toast.makeText(this@SignupActivity, "Account created! Check your email to verify.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            this@SignupActivity,
+                            "Account created! Check your email to verify.",
+                            Toast.LENGTH_LONG
+                        ).show()
 
-                        // Balik sa Login
                         startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
                         finish()
+
                     } else {
-                        // Kung sakaling hindi agad nakuha ang ID (hal. email confirmation is required)
-                        Toast.makeText(this@SignupActivity, "Verification email sent! Please verify first.", Toast.LENGTH_LONG).show()
+                        // Email confirmation required
+                        Toast.makeText(
+                            this@SignupActivity,
+                            "Verification email sent! Please verify first.",
+                            Toast.LENGTH_LONG
+                        ).show()
                         startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
                         finish()
                     }

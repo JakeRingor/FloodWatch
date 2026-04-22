@@ -2,4 +2,27 @@
     <string name="app_name">FloodWatch</string>
     <string name="google_maps_key">AIzaSyDOuzCVhnrFD3UhBjdJcbebi76hamwcMmw</string>
     <string name="last_updated">Last updated: %1$s</string>
+
+    <string name="profile">Profile</string>
+    <string name="user_name">Julius Raffy</string>
+    <string name="user_email">Julius Raffy@kingsville.gov</string>
+    <string name="reports_submitted">REPORTS SUBMITTED</string>
+    <string name="verified_submissions">VERIFIED SUBMISSIONS</string>
+    <string name="emergency_settings">Emergency Settings</string>
+    <string name="emergency_contact">Emergency Contact</string>
+    <string name="emergency_contact_name">Marlon Gurion (Friend)</string>
+    <string name="home_zone">Home Zone</string>
+    <string name="home_zone_address">28 Kingsville</string>
+    <string name="notification_preferences">Notification Preferences</string>
+    <string name="flood_alerts">Flood Alerts</string>
+    <string name="water_level_changes">Water Level Changes</string>
+    <string name="community_news">Community News</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="change_password">Change Password</string>
+    <string name="log_out">Log Out</string>
+    <string name="profile_image_desc">Profile Image</string>
+    <string name="edit_icon_desc">Edit Icon</string>
+    <string name="back_button_desc">Back Button</string>
+    <string name="stats_count_3">3</string>
+    <string name="stats_count_2">2</string>
 </resources>

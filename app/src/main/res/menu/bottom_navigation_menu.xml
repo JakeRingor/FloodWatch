@@ -17,8 +17,8 @@
         android:title="Alerts" />
 
     <item
-        android:id="@+id/navigation_preparedness"
-        android:icon="@drawable/ic_preparedness"
-        android:title="Preparedness" />
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Profile" />
 
 </menu>

@@ -3,37 +3,100 @@ package com.example.floodwatch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// ── USER & DATABASE MODELS ──
+// ── APP LOCATION CONSTANTS ────────────────────────────────────────────────────
+
+object AppLocation {
+    const val BARANGAY     = "Kingsville Executive Village"
+    const val MUNICIPALITY = "Cainta"
+    const val PROVINCE     = "Rizal"
+    const val LAT          = 14.5760  // ⚠️ I-verify sa Google Maps
+    const val LNG          = 121.1058 // ⚠️ I-verify sa Google Maps
+    const val DEFAULT_ZOOM = 16f
+}
+
+// ── ENUMS ─────────────────────────────────────────────────────────────────────
+
+@Serializable
+enum class FloodLevel { LOW, MEDIUM, HIGH, CRITICAL }
+
+@Serializable
+enum class ReportStatus { PENDING, VERIFIED, DISMISSED }
+
+@Serializable
+enum class AlertSeverity { ADVISORY, WATCH, WARNING, CRITICAL }
+
+// ── USER PROFILE ──────────────────────────────────────────────────────────────
 
 @Serializable
 data class UserProfile(
     val id: String,
-    val full_name: String? = null,
-    val phone_number: String? = null,
-    val address: String? = null
+
+    @SerialName("full_name")
+    val fullName: String? = null,
+
+    @SerialName("phone_number")
+    val phoneNumber: String? = null,
+
+    val address: String? = null,
+
+    @SerialName("profile_image_url")
+    val profileImageUrl: String? = null,
+
+    @SerialName("created_at")
+    val createdAt: String? = null
 )
 
-
+// ── FLOOD REPORT ──────────────────────────────────────────────────────────────
 
 @Serializable
 data class FloodReport(
     val id: String? = null,
-    val user_id: String,
-    val image_url: String? = null,
+
+    @SerialName("user_id")
+    val userId: String,
+
+    @SerialName("image_url")
+    val imageUrl: String? = null,
+
     val address: String? = null,
     val latitude: Double,
     val longitude: Double,
-    val timestamp: Long
+
+    @SerialName("flood_level")
+    val floodLevel: FloodLevel = FloodLevel.LOW,
+
+    val description: String? = null,
+    val severity: Int = 1,
+    val status: ReportStatus = ReportStatus.PENDING,
+
+    @SerialName("created_at")
+    val createdAt: String? = null
 )
 
-// ── WEATHER MODELS (OpenWeather API) ──
+// ── FLOOD ALERT ───────────────────────────────────────────────────────────────
+
+@Serializable
+data class FloodAlert(
+    val id: String? = null,
+    val title: String,
+    val message: String,
+    val severity: AlertSeverity = AlertSeverity.ADVISORY,
+
+    @SerialName("is_active")
+    val isActive: Boolean = true,
+
+    @SerialName("created_at")
+    val createdAt: String? = null
+)
+
+// ── WEATHER MODELS (OpenWeather API) ──────────────────────────────────────────
 
 @Serializable
 data class WeatherResponse(
     val main: MainData,
     val weather: List<WeatherDescription>,
     val wind: WindData,
-    val rain: RainData? = null // Nullable dahil hindi naman laging umuulan
+    val rain: RainData? = null
 )
 
 @Serializable
@@ -45,7 +108,7 @@ data class MainData(
 
 @Serializable
 data class WeatherDescription(
-    val main: String, // Halimbawa: "Rain", "Clouds", "Clear"
+    val main: String,
     val description: String
 )
 
@@ -56,7 +119,6 @@ data class WindData(
 
 @Serializable
 data class RainData(
-    // Ginagamitan natin ng SerialName dahil bawal magsimula sa numero ang variable name sa Kotlin
     @SerialName("1h")
     val oneHour: Double? = 0.0
 )

@@ -9,7 +9,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.floodwatch.databinding.ActivityHomeBinding
-// ✅ TAMA NA IMPORT PARA SA V3 (Wala nang _tennert)
 import io.github.jan.supabase.auth.auth
 
 class HomeActivity : AppCompatActivity() {
@@ -23,33 +22,46 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Edge-to-edge insets setup
+        if (savedInstanceState == null) {
+            val session = SupabaseClient.client.auth.currentSessionOrNull()
+            if (session == null) {
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return
+            }
+        }
+
+        fixBottomNavIconTextGap()
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        // Red dot badge on Alerts tab
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { v, _ ->
+            v.setPadding(0, 0, 0, 0)
+            WindowInsetsCompat.CONSUMED
+        }
+
         val alertsBadge = binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts)
         alertsBadge.isVisible = true
         alertsBadge.backgroundColor = Color.RED
 
-        // Bottom Navigation logic
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             if (binding.bottomNavigation.selectedItemId == item.itemId) {
                 return@setOnItemSelectedListener false
             }
 
             val selectedFragment: Fragment = when (item.itemId) {
-                R.id.navigation_home          -> HomeFragment()
-                R.id.navigation_report        -> ReportFragment()
-                R.id.navigation_alerts        -> {
+                R.id.navigation_home         -> HomeFragment()
+                R.id.navigation_report       -> ReportFragment()
+                R.id.navigation_alerts       -> {
                     alertsBadge.isVisible = false
                     AlertsFragment()
                 }
-                R.id.navigation_preparedness  -> PreparednessFragment()
-                else                          -> HomeFragment()
+                R.id.navigation_profile -> ProfileFragment()
+                else                         -> HomeFragment()
             }
 
             supportFragmentManager.beginTransaction()
@@ -68,13 +80,39 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        // ✅ Supabase v3 check for session
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
-        if (session == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
+    private fun fixBottomNavIconTextGap() {
+        binding.bottomNavigation.post {
+            try {
+                val menuView = binding.bottomNavigation.getChildAt(0) as? android.view.ViewGroup
+                    ?: return@post
+                val density = resources.displayMetrics.density
+
+                // ✅ I-disable ang clipping para hindi ma-clip ang labels
+                binding.bottomNavigation.clipChildren = false
+                binding.bottomNavigation.clipToPadding = false
+                menuView.clipChildren = false
+                menuView.clipToPadding = false
+
+                for (i in 0 until menuView.childCount) {
+                    val item = menuView.getChildAt(i) as? android.view.ViewGroup ?: continue
+                    item.clipChildren = false
+                    item.clipToPadding = false
+
+                    val largeLabel = item.findViewById<android.widget.TextView>(
+                        com.google.android.material.R.id.navigation_bar_item_large_label_view
+                    )
+                    val smallLabel = item.findViewById<android.widget.TextView>(
+                        com.google.android.material.R.id.navigation_bar_item_small_label_view
+                    )
+
+                    listOf(largeLabel, smallLabel).forEach { label ->
+                        label?.translationY = -18f * density
+                        label?.setPadding(0, 0, 0, 0)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

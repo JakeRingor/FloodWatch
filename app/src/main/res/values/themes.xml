@@ -1,9 +1,42 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
     <style name="Base.Theme.FloodWatch" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#2563EB</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#1A2E4A</item>
+        <item name="colorOnPrimaryContainer">#FFFFFF</item>
+        <item name="colorSurface">#F0F4F8</item>
+        <item name="android:statusBarColor">#1A2E4A</item>
+        <item name="android:navigationBarColor">#1A2E4A</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="bottomNavigationStyle">@style/FloodWatchBottomNav</item>
     </style>
 
     <style name="Theme.FloodWatch" parent="Base.Theme.FloodWatch" />
+
+    <style name="FloodWatchBottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">#1A2E4A</item>
+        <item name="itemActiveIndicatorStyle">@style/ActiveIndicatorStyle</item>
+
+        <item name="itemIconTint">@color/bottom_nav_colors</item>
+        <item name="itemTextColor">@color/bottom_nav_colors</item>
+        <item name="itemPaddingTop">2dp</item>
+        <item name="itemPaddingBottom">2dp</item>
+        <item name="itemIconSize">22dp</item>
+        <item name="itemTextAppearanceActive">@style/BottomNavTextStyle</item>
+        <item name="itemTextAppearanceInactive">@style/BottomNavTextStyle</item>
+    </style>
+
+
+    <style name="ActiveIndicatorStyle" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">#2563EB</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+    </style>
+
+    <style name="BottomNavTextStyle" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
 </resources>
