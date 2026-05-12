@@ -109,12 +109,35 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val rainVal = response.rain?.oneHour ?: 0.0
                     b.textViewRainfall.text = rainVal.toInt().toString()
 
+                    val temp = response.main.temp
                     val condition = response.weather.firstOrNull()?.main ?: ""
+
                     when {
-                        condition.contains("Rain", true)  -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
-                        condition.contains("Cloud", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
-                        condition.contains("Clear", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
-                        else                              -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+
+
+                        temp >= 32 -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
+
+                        // 🌧 Rain
+                        condition.contains("Rain", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
+                        }
+
+                        // ☁ Cloud
+                        condition.contains("Cloud", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
+                        }
+
+                        // ☀ Clear
+                        condition.contains("Clear", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
+
+                        // default
+                        else -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
                     }
                 }
             } catch (e: Exception) {

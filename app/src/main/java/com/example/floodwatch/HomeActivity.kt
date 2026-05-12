@@ -31,17 +31,16 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        fixBottomNavIconTextGap()
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { v, _ ->
-            v.setPadding(0, 0, 0, 0)
-            WindowInsetsCompat.CONSUMED
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, systemBars.bottom)
+            insets
         }
 
         val alertsBadge = binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts)
@@ -54,14 +53,14 @@ class HomeActivity : AppCompatActivity() {
             }
 
             val selectedFragment: Fragment = when (item.itemId) {
-                R.id.navigation_home         -> HomeFragment()
-                R.id.navigation_report       -> ReportFragment()
-                R.id.navigation_alerts       -> {
+                R.id.navigation_home -> HomeFragment()
+                R.id.navigation_report -> ReportFragment()
+                R.id.navigation_alerts -> {
                     alertsBadge.isVisible = false
                     AlertsFragment()
                 }
                 R.id.navigation_profile -> ProfileFragment()
-                else                         -> HomeFragment()
+                else -> HomeFragment()
             }
 
             supportFragmentManager.beginTransaction()
@@ -77,42 +76,6 @@ class HomeActivity : AppCompatActivity() {
                 .replace(R.id.fragment_container, HomeFragment())
                 .commit()
             binding.bottomNavigation.selectedItemId = R.id.navigation_home
-        }
-    }
-
-    private fun fixBottomNavIconTextGap() {
-        binding.bottomNavigation.post {
-            try {
-                val menuView = binding.bottomNavigation.getChildAt(0) as? android.view.ViewGroup
-                    ?: return@post
-                val density = resources.displayMetrics.density
-
-                // ✅ I-disable ang clipping para hindi ma-clip ang labels
-                binding.bottomNavigation.clipChildren = false
-                binding.bottomNavigation.clipToPadding = false
-                menuView.clipChildren = false
-                menuView.clipToPadding = false
-
-                for (i in 0 until menuView.childCount) {
-                    val item = menuView.getChildAt(i) as? android.view.ViewGroup ?: continue
-                    item.clipChildren = false
-                    item.clipToPadding = false
-
-                    val largeLabel = item.findViewById<android.widget.TextView>(
-                        com.google.android.material.R.id.navigation_bar_item_large_label_view
-                    )
-                    val smallLabel = item.findViewById<android.widget.TextView>(
-                        com.google.android.material.R.id.navigation_bar_item_small_label_view
-                    )
-
-                    listOf(largeLabel, smallLabel).forEach { label ->
-                        label?.translationY = -18f * density
-                        label?.setPadding(0, 0, 0, 0)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
         }
     }
 }

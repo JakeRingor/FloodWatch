@@ -578,25 +578,6 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- ── Report Local Flood Button ── -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonReportFlood"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Report Local Flood"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:padding="16dp"
-                android:layout_marginBottom="20dp"
-                app:backgroundTint="#2563EB"
-                app:cornerRadius="14dp"
-                app:icon="@drawable/ic_location_pin"
-                app:iconTint="#FFFFFF"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp" />
-
-            <!-- ══ Stats Grid 2×2 ══ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

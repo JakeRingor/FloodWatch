@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- ✅ KAILANGAN: 0dp + weight="1" — HINDI match_parent -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
@@ -17,13 +16,12 @@
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="64dp"
         android:background="#1A2E4A"
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
-        app:itemIconSize="26dp"
-        app:itemPaddingTop="6dp"
-        app:itemPaddingBottom="6dp"
+        app:itemIconSize="24dp"
+        app:itemPaddingTop="0dp"
+        app:itemPaddingBottom="0dp"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu"
         app:elevation="0dp" />

@@ -30,6 +30,13 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
+        // ── Pre-fill email if coming from ForgotPassword or ResetPassword ──
+        val prefillEmail = intent.getStringExtra("prefill_email")
+        if (!prefillEmail.isNullOrBlank()) {
+            binding.editTextEmail.setText(prefillEmail)
+            binding.editTextPassword.requestFocus()
+        }
+
         // ── Login ──────────────────────────────────────────────
         binding.buttonLogin.setOnClickListener {
             val email = binding.editTextEmail.text.toString().trim()
@@ -50,7 +57,6 @@ class LoginActivity : AppCompatActivity() {
                         this.password = password
                     }
 
-                    // ✅ WALA NANG SharedPreferences — SessionManager na ang bahala
                     startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                     finish()
 
@@ -66,38 +72,23 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
+        // ── Sign Up ────────────────────────────────────────────
         binding.textViewSignUp.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
         }
 
+        // ── Forgot Password → navigate to ForgotPasswordActivity ──
         binding.textViewForgot.setOnClickListener {
             val email = binding.editTextEmail.text.toString().trim()
-            if (email.isEmpty()) {
-                Toast.makeText(
-                    this,
-                    "Enter your email above to reset your password.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-            lifecycleScope.launch {
-                try {
-                    SupabaseClient.client.auth.resetPasswordForEmail(email)
-                    Toast.makeText(
-                        this@LoginActivity,
-                        "Reset link sent to $email",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } catch (e: Exception) {
-                    Toast.makeText(
-                        this@LoginActivity,
-                        "Failed: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+            val intent = Intent(this, ForgotPasswordActivity::class.java).apply {
+                if (email.isNotEmpty()) {
+                    putExtra("prefill_email", email)
                 }
             }
+            startActivity(intent)
         }
 
+        // ── Footer Links ───────────────────────────────────────
         binding.textViewStatus.setOnClickListener {
             startActivity(
                 Intent(
@@ -120,9 +111,10 @@ class LoginActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        // ✅ Kung galing sa logout, huwag mag-redirect — session cache baka hindi pa cleared
+        // ── Skip auto-login if coming from logout OR password reset ──
         val fromLogout = intent.getBooleanExtra("from_logout", false)
-        if (fromLogout) return
+        val fromReset = !intent.getStringExtra("prefill_email").isNullOrBlank()
+        if (fromLogout || fromReset) return
 
         try {
             val session = SupabaseClient.client.auth.currentSessionOrNull()

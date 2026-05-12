@@ -28,8 +28,8 @@
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
         app:itemIconSize="24dp"
-        app:itemPaddingTop="4dp"
-        app:itemPaddingBottom="4dp"
+        app:itemPaddingTop="15dp"
+        app:itemPaddingBottom="15dp"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu"
         app:elevation="0dp" />
