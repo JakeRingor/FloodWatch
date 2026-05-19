@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -39,7 +40,6 @@ class SignupActivity : AppCompatActivity() {
             val fullName        = binding.editTextFullName.text.toString().trim()
             val phone           = binding.editTextPhone.text.toString().trim()
 
-            // Validation
             if (email.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
                 Toast.makeText(this, "Please fill in all required fields!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -61,54 +61,40 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Loading state
             binding.buttonSignUp.isEnabled = false
             binding.buttonSignUp.text = "Creating account…"
 
             lifecycleScope.launch {
                 try {
-                    // STEP 1: Signup with Email
                     SupabaseClient.client.auth.signUpWith(Email) {
                         this.email = email
                         this.password = password
                     }
 
-                    // STEP 2: Kunin ang User ID
                     val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
 
                     if (userId != null) {
-                        // STEP 3: Upsert sa user_profiles table
-                        // ✅ Upsert — safe kahit may auto-create trigger na
                         val profile = UserProfile(
                             id = userId,
                             fullName = fullName,
                             phoneNumber = phone,
                             address = ""
                         )
-
                         SupabaseClient.client
                             .from("user_profiles")
                             .upsert(profile)
-
-                        Toast.makeText(
-                            this@SignupActivity,
-                            "Account created! Check your email to verify.",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
-                        finish()
-
-                    } else {
-                        // Email confirmation required
-                        Toast.makeText(
-                            this@SignupActivity,
-                            "Verification email sent! Please verify first.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
-                        finish()
                     }
+
+                    // Always show verification dialog regardless of userId
+                    AlertDialog.Builder(this@SignupActivity)
+                        .setTitle("Verify Your Email")
+                        .setMessage("A verification link has been sent to $email.\n\nPlease check your inbox and click the link before logging in.")
+                        .setPositiveButton("Go to Login") { _, _ ->
+                            startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
+                            finish()
+                        }
+                        .setCancelable(false)
+                        .show()
 
                 } catch (e: Exception) {
                     binding.buttonSignUp.isEnabled = true
@@ -119,7 +105,7 @@ class SignupActivity : AppCompatActivity() {
         }
 
         binding.textViewLogin.setOnClickListener {
-            finish() // Balik sa Login screen
+            finish()
         }
     }
 }

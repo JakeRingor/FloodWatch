@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,6 +29,16 @@ class LoginActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        // ── Handle email verification deep link ────────────────
+        if (intent?.data?.host == "verify-email") {
+            AlertDialog.Builder(this)
+                .setTitle("Email Verified!")
+                .setMessage("Your email has been verified. You can now log in to your FloodWatch account.")
+                .setPositiveButton("OK", null)
+                .setCancelable(false)
+                .show()
         }
 
         // ── Pre-fill email if coming from ForgotPassword or ResetPassword ──
@@ -55,6 +66,20 @@ class LoginActivity : AppCompatActivity() {
                     SupabaseClient.client.auth.signInWith(Email) {
                         this.email = email
                         this.password = password
+                    }
+
+                    val user = SupabaseClient.client.auth.currentUserOrNull()
+
+                    if (user?.emailConfirmedAt == null) {
+                        SupabaseClient.client.auth.signOut()
+                        binding.buttonLogin.isEnabled = true
+                        binding.buttonLogin.text = "Login to Dashboard  →"
+                        AlertDialog.Builder(this@LoginActivity)
+                            .setTitle("Email Not Verified")
+                            .setMessage("Please check your inbox and click the verification link before logging in.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                        return@launch
                     }
 
                     startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
@@ -111,10 +136,11 @@ class LoginActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        // ── Skip auto-login if coming from logout OR password reset ──
+        // ── Skip auto-login if coming from logout, password reset, or deep link ──
         val fromLogout = intent.getBooleanExtra("from_logout", false)
         val fromReset = !intent.getStringExtra("prefill_email").isNullOrBlank()
-        if (fromLogout || fromReset) return
+        val fromDeepLink = intent?.data?.host == "verify-email"
+        if (fromLogout || fromReset || fromDeepLink) return
 
         try {
             val session = SupabaseClient.client.auth.currentSessionOrNull()
