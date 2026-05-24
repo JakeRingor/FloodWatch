@@ -53,35 +53,6 @@
                         android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:orientation="horizontal">
-
-                    <ImageButton
-                        android:id="@+id/buttonSearch"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:padding="8dp"
-                        app:srcCompat="@drawable/ic_search"
-                        app:tint="#1A2E4A"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Search" />
-
-                    <ImageButton
-                        android:id="@+id/buttonMenu"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:padding="8dp"
-                        app:srcCompat="@drawable/ic_menu"
-                        app:tint="#1A2E4A"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Menu" />
-                </LinearLayout>
-
             </RelativeLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
@@ -167,56 +138,6 @@
                         android:text="--% Humidity"
                         android:textColor="#5A7A99"
                         android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- RIGHT: HIGH / RI / SK badges -->
-                <!-- FIX: wrap_content + alignParentEnd + vertical stack -->
-                <LinearLayout
-                    android:id="@+id/badgesLayout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="HIGH"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="RI"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="SK"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp" />
                 </LinearLayout>
 
             </RelativeLayout>
@@ -452,7 +373,7 @@
                             android:id="@+id/textViewAlertDetails"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Details →"
+                            android:text="Details"
                             android:textColor="#2563EB"
                             android:textSize="12sp"
                             android:textStyle="bold"

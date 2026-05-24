@@ -40,6 +40,7 @@ class SignupActivity : AppCompatActivity() {
             val fullName        = binding.editTextFullName.text.toString().trim()
             val phone           = binding.editTextPhone.text.toString().trim()
 
+            // ── Validation ─────────────────────────────────────────
             if (email.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
                 Toast.makeText(this, "Please fill in all required fields!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -48,8 +49,15 @@ class SignupActivity : AppCompatActivity() {
                 Toast.makeText(this, "Enter a valid email address.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (password.length < 6) {
-                Toast.makeText(this, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            if (password.length < 12) {
+                Toast.makeText(this, "Password must be at least 12 characters.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val passwordRegex = Regex("^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%^&*]).{12,}\$")
+            if (!passwordRegex.matches(password)) {
+                Toast.makeText(this,
+                    "Password must have uppercase, number, and special character (!@#\$%^&*).",
+                    Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (password != confirmPassword) {
@@ -61,6 +69,7 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // ── Loading State ──────────────────────────────────────
             binding.buttonSignUp.isEnabled = false
             binding.buttonSignUp.text = "Creating account…"
 
@@ -85,7 +94,7 @@ class SignupActivity : AppCompatActivity() {
                             .upsert(profile)
                     }
 
-                    // Always show verification dialog regardless of userId
+                    // ── Show Verification Dialog ───────────────────
                     AlertDialog.Builder(this@SignupActivity)
                         .setTitle("Verify Your Email")
                         .setMessage("A verification link has been sent to $email.\n\nPlease check your inbox and click the link before logging in.")
@@ -98,7 +107,7 @@ class SignupActivity : AppCompatActivity() {
 
                 } catch (e: Exception) {
                     binding.buttonSignUp.isEnabled = true
-                    binding.buttonSignUp.text = "Create Account  →"
+                    binding.buttonSignUp.text = "Create Account"
                     Toast.makeText(this@SignupActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }

@@ -426,7 +426,7 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                     address = textViewAddress.text.toString(),
                     latitude = currentLat,
                     longitude = currentLng,
-                    floodLevel = FloodLevel.LOW,
+                    floodLevel = "LOW",
                     description = null
                 )
 

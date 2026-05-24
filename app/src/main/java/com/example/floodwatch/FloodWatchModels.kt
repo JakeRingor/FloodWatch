@@ -16,11 +16,6 @@ object AppLocation {
 
 // ── ENUMS ─────────────────────────────────────────────────────────────────────
 
-@Serializable
-enum class FloodLevel { LOW, MEDIUM, HIGH, CRITICAL }
-
-@Serializable
-enum class ReportStatus { PENDING, VERIFIED, DISMISSED }
 
 @Serializable
 enum class AlertSeverity { ADVISORY, WATCH, WARNING, CRITICAL }
@@ -53,21 +48,22 @@ data class FloodReport(
     val id: String? = null,
 
     @SerialName("user_id")
-    val userId: String,
+    val userId: String = "",
 
     @SerialName("image_url")
     val imageUrl: String? = null,
 
     val address: String? = null,
-    val latitude: Double,
-    val longitude: Double,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
 
     @SerialName("flood_level")
-    val floodLevel: FloodLevel = FloodLevel.LOW,
+    val floodLevel: String? = null,   // ← String na, hindi enum
 
     val description: String? = null,
-    val severity: Int = 1,
-    val status: ReportStatus = ReportStatus.PENDING,
+    val severity: Int? = null,
+
+    val status: String = "pending",   // ← String na, hindi enum
 
     @SerialName("created_at")
     val createdAt: String? = null

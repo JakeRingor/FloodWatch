@@ -73,7 +73,7 @@ class LoginActivity : AppCompatActivity() {
                     if (user?.emailConfirmedAt == null) {
                         SupabaseClient.client.auth.signOut()
                         binding.buttonLogin.isEnabled = true
-                        binding.buttonLogin.text = "Login to Dashboard  →"
+                        binding.buttonLogin.text = "Login to Dashboard"
                         AlertDialog.Builder(this@LoginActivity)
                             .setTitle("Email Not Verified")
                             .setMessage("Please check your inbox and click the verification link before logging in.")
@@ -87,7 +87,7 @@ class LoginActivity : AppCompatActivity() {
 
                 } catch (e: Exception) {
                     binding.buttonLogin.isEnabled = true
-                    binding.buttonLogin.text = "Login to Dashboard  →"
+                    binding.buttonLogin.text = "Login to Dashboard"
                     Toast.makeText(
                         this@LoginActivity,
                         "Login failed: ${e.message}",
@@ -136,7 +136,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        // ── Skip auto-login if coming from logout, password reset, or deep link ──
         val fromLogout = intent.getBooleanExtra("from_logout", false)
         val fromReset = !intent.getStringExtra("prefill_email").isNullOrBlank()
         val fromDeepLink = intent?.data?.host == "verify-email"
@@ -145,6 +144,16 @@ class LoginActivity : AppCompatActivity() {
         try {
             val session = SupabaseClient.client.auth.currentSessionOrNull()
             if (session != null) {
+                val user = SupabaseClient.client.auth.currentUserOrNull()
+
+                // ── Block unverified users from auto-login ─────
+                if (user?.emailConfirmedAt == null) {
+                    lifecycleScope.launch {
+                        try { SupabaseClient.client.auth.signOut() } catch (e: Exception) { }
+                    }
+                    return
+                }
+
                 startActivity(Intent(this, HomeActivity::class.java))
                 finish()
             }

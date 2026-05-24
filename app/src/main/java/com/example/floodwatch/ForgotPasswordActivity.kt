@@ -71,7 +71,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
 
                 } catch (e: Exception) {
                     binding.buttonSendReset.isEnabled = true
-                    binding.buttonSendReset.text = "Send Reset Link  →"
+                    binding.buttonSendReset.text = "Send Reset Link"
 
                     val errorMsg = when {
                         e.message?.contains("rate limit", ignoreCase = true) == true ->
