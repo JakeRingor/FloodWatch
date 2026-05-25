@@ -92,8 +92,13 @@ class ResetPasswordActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please fill in both fields.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (newPass.length < 8) {
-                Toast.makeText(this, "Password must be at least 8 characters.", Toast.LENGTH_SHORT).show()
+            val passwordRegex = Regex("^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%^&*]).{12,}\$")
+            if (!passwordRegex.matches(newPass)) {
+                Toast.makeText(
+                    this,
+                    "Password must be at least 12 characters with uppercase, number, and special character (!@#\$%^&*).",
+                    Toast.LENGTH_LONG
+                ).show()
                 return@setOnClickListener
             }
             if (newPass != confirmPass) {

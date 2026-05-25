@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Geocoder
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -21,6 +23,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -49,6 +52,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.contentOrNull
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.*
 
 class ReportFragment : Fragment(), OnMapReadyCallback {
@@ -64,6 +68,9 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     private var btnAutoDetect: MaterialButton? = null
     private var locationCallback: LocationCallback? = null
 
+    // ✅ BAGO — Uri para sa full resolution photo
+    private lateinit var photoUri: Uri
+
     // ── Camera permission launcher ──────────────────────────
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -72,11 +79,15 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         else Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
     }
 
-    // ── Camera launcher ─────────────────────────────────────
+    // ✅ BAGO — Full resolution camera (hindi na TakePicturePreview)
     private val cameraLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            // I-decode ang full resolution photo mula sa file
+            val bitmap = BitmapFactory.decodeStream(
+                requireContext().contentResolver.openInputStream(photoUri)
+            )
             capturedBitmap = bitmap
             Toast.makeText(requireContext(), "✅ Photo captured!", Toast.LENGTH_SHORT).show()
         }
@@ -106,8 +117,6 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         textViewAddress = view.findViewById(R.id.textViewAddress)
         btnAutoDetect = view.findViewById(R.id.buttonAutoDetect)
 
-        // ✅ TANGGAL NA DITO ang map init — nilipat na sa onViewCreated()
-
         view.findViewById<MaterialButton>(R.id.buttonGallery).setOnClickListener {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED
@@ -124,7 +133,6 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         return view
     }
 
-    // ✅ BAGO — Map init dito na, hindi na sa onCreateView
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
@@ -135,14 +143,24 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    // ── Camera ───────────────────────────────────────────────
+    // ✅ BAGO — Gumagawa ng temp file at binubuksan ang native camera app
     private fun launchCamera() {
-        cameraLauncher.launch(null)
+        val photoFile = File.createTempFile(
+            "flood_${System.currentTimeMillis()}",
+            ".jpg",
+            requireContext().cacheDir
+        )
+        photoUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.provider",
+            photoFile
+        )
+        cameraLauncher.launch(photoUri)
     }
 
     // ── Map ready ────────────────────────────────────────────
     override fun onMapReady(googleMap: GoogleMap) {
-        Log.d("FloodWatch", "✅ onMapReady called!") // ← Para malaman kung tumatawag
+        Log.d("FloodWatch", "✅ onMapReady called!")
         mGoogleMap = googleMap
         mGoogleMap?.moveCamera(
             CameraUpdateFactory.newLatLngZoom(
@@ -411,8 +429,9 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 btnSubmit?.isEnabled = false
                 btnSubmit?.text = "Submitting…"
 
+                // ✅ 90% quality para malinaw pero hindi masyadong malaki ang file
                 val outputStream = ByteArrayOutputStream()
-                capturedBitmap!!.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                capturedBitmap!!.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
                 val bytes = outputStream.toByteArray()
 
                 val fileName = "report_${System.currentTimeMillis()}.jpg"

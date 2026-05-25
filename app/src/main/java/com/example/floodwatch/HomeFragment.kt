@@ -151,17 +151,25 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         lifecycleScope.launch {
             try {
                 val reports = SupabaseClient.client.postgrest
-                    .from("flood_reports")          // ✅ FIXED — dati "reports"
+                    .from("flood_reports")
                     .select()
                     .decodeList<FloodReport>()
 
-                _binding?.let { b ->
-                    val count = reports.size
-                    b.textViewActiveAlerts.text = String.format("%02d", count)
+                Log.d("FloodWatch", "Total reports: ${reports.size}")
+                reports.forEach { Log.d("FloodWatch", "Status: ${it.status}") }
 
+                // ✅ TAMA — uppercase() compare sa "PENDING"
+                val count = reports.count { it.status.uppercase() == "PENDING" }
+
+                Log.d("FloodWatch", "PENDING count: $count")
+
+                _binding?.let { b ->
+                    b.textViewActiveAlerts.text = String.format("%02d", count)
                     if (count > 0) {
                         b.textViewEvacStatus.text = "READY"
-                        b.textViewEvacStatus.setTextColor(android.graphics.Color.parseColor("#0EA5E9"))
+                        b.textViewEvacStatus.setTextColor(
+                            android.graphics.Color.parseColor("#0EA5E9")
+                        )
                     } else {
                         b.textViewEvacStatus.text = "NONE"
                         b.textViewEvacStatus.setTextColor(android.graphics.Color.GRAY)
@@ -169,15 +177,17 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 }
 
                 googleMap.clear()
-                reports.forEach { report ->
+                reports.filter { it.status.uppercase() == "PENDING" }.forEach { report ->
                     googleMap.addMarker(
                         MarkerOptions()
                             .position(LatLng(report.latitude, report.longitude))
                             .title("Flood Incident")
                             .snippet(report.address)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                            .icon(BitmapDescriptorFactory.defaultMarker(
+                                BitmapDescriptorFactory.HUE_BLUE))
                     )
                 }
+
             } catch (e: Exception) {
                 Log.e("FloodWatch", "Supabase Error: ${e.message}")
             }
@@ -235,7 +245,14 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         _binding?.textLastUpdated?.text = "Last updated: ${sdf.format(Date())}"
     }
 
-    override fun onResume() { super.onResume(); binding.mapView.onResume() }
+    override fun onResume() {
+        super.onResume()
+        binding.mapView.onResume()
+        if (::googleMap.isInitialized) {
+            fetchFloodReports()
+            fetchFloodAlerts()
+        }
+    }
     override fun onPause() { super.onPause(); binding.mapView.onPause() }
     override fun onDestroyView() {
         super.onDestroyView()

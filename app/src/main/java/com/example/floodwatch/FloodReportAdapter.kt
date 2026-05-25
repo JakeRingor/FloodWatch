@@ -52,8 +52,8 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
 
     private fun formatDate(dateStr: String): String {
         return try {
-            val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
-            val output = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            val output = SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault())
             output.format(input.parse(dateStr)!!)
         } catch (e: Exception) {
             dateStr

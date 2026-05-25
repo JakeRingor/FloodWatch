@@ -189,7 +189,7 @@
                     app:boxStrokeColor="#191C1D"
                     app:boxBackgroundColor="#F7FAFD"
                     app:endIconMode="password_toggle"
-                    app:helperText="Minimum 6 characters"
+                    app:helperText="Minimum 12 characters"
                     android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.TextInputEditText
