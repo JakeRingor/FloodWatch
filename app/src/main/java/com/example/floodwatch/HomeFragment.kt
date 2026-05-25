@@ -152,11 +152,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     .select()
                     .decodeList<FloodReport>()
 
-                val count = reports.count { it.status.uppercase() == "PENDING" }
+                // Counter sa dashboard — PENDING pa rin (hindi pa na-verify)
+                val pendingCount = reports.count { it.status.uppercase() == "PENDING" }
 
                 _binding?.let { b ->
-                    b.textViewActiveAlerts.text = String.format("%02d", count)
-                    if (count > 0) {
+                    b.textViewActiveAlerts.text = String.format("%02d", pendingCount)
+                    if (pendingCount > 0) {
                         b.textViewEvacStatus.text = "READY"
                         b.textViewEvacStatus.setTextColor(android.graphics.Color.parseColor("#0EA5E9"))
                     } else {
@@ -165,18 +166,18 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     }
                 }
 
+                // Map markers — VERIFIED na reports lang
                 googleMap.clear()
-                reports.filter { it.status.uppercase() == "PENDING" }.forEach { report ->
-                    // [CnS] Requirement: Parameter, Vehicle Passability & Timestamp basis
+                reports.filter { it.status.uppercase() == "VERIFIED" }.forEach { report ->
                     val timestamp = report.createdAt?.let { formatReportDate(it) } ?: ""
                     val details = "Level: ${report.floodLevel ?: "N/A"} | Passable: ${report.passability ?: "Unknown"}\nReported: $timestamp"
-                    
+
                     googleMap.addMarker(
                         MarkerOptions()
                             .position(LatLng(report.latitude, report.longitude))
-                            .title("Flood Incident")
+                            .title("✓ Verified Flood Report")
                             .snippet(details)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
                     )
                 }
 
@@ -203,14 +204,39 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                         val latest = alerts.first()
                         b.textViewAlertTitle.text = latest.title
                         b.textViewAlertDesc.text  = latest.message
+                        b.textViewAlertUpdated.text = formatRelativeTime(latest.createdAt)
                     } else {
                         b.textViewAlertTitle.text = "No active alerts"
                         b.textViewAlertDesc.text  = "All clear. No flood incidents reported."
+                        b.textViewAlertUpdated.text = ""
                     }
                 }
             } catch (e: Exception) {
                 Log.e("FloodWatch", "Alerts Error: ${e.message}")
             }
+        }
+    }
+
+    private fun formatRelativeTime(dateStr: String?): String {
+        if (dateStr == null) return ""
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            val alertTime = sdf.parse(dateStr)?.time ?: return ""
+            val now = System.currentTimeMillis()
+            val diffMs = now - alertTime
+
+            val minutes = diffMs / 60_000
+            val hours   = diffMs / 3_600_000
+            val days    = diffMs / 86_400_000
+
+            when {
+                minutes < 1  -> "Updated just now"
+                minutes < 60 -> "Updated ${minutes} min ago"
+                hours   < 24 -> "Updated ${hours} hr ago"
+                else         -> "Updated ${days} day${if (days > 1) "s" else ""} ago"
+            }
+        } catch (e: Exception) {
+            ""
         }
     }
 
