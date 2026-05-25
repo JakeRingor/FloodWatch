@@ -48,7 +48,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             .create(OpenWeatherApi::class.java)
     }
 
-    private val refreshInterval = 3 * 60 * 1000L
+    // [CnS] Requirement: Update every 15 mins to know flood conditions
+    private val refreshInterval = 15 * 60 * 1000L
     private val handler = Handler(Looper.getMainLooper())
 
     private val refreshRunnable = object : Runnable {
@@ -82,6 +83,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        
+        // [CnS] Requirement: Include above sea level area (satellite/hybrid for prediction)
+        googleMap.mapType = GoogleMap.MAP_TYPE_HYBRID
+        
+        // [CnS] Requirement: Traffic info for vehicle passability basis
+        googleMap.isTrafficEnabled = true
+        
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KINGSVILLE, 15f))
         binding.textViewStatus.text = "Kingsville • Rizal Weather"
         refreshData()
@@ -92,7 +100,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         addWeatherOverlay(currentLayer)
         updateLastUpdated()
         fetchFloodReports()
-        fetchFloodAlerts()                          // ✅ BAGONG DAGDAG
+        fetchFloodAlerts()
         fetchWeatherData(RIZAL_LAT, RIZAL_LON)
     }
 
@@ -113,28 +121,18 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val condition = response.weather.firstOrNull()?.main ?: ""
 
                     when {
-
-
                         temp >= 32 -> {
                             b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
                         }
-
-                        // 🌧 Rain
                         condition.contains("Rain", true) -> {
                             b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
                         }
-
-                        // ☁ Cloud
                         condition.contains("Cloud", true) -> {
                             b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
                         }
-
-                        // ☀ Clear
                         condition.contains("Clear", true) -> {
                             b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
                         }
-
-                        // default
                         else -> {
                             b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
                         }
@@ -146,7 +144,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    // ✅ FIX: "reports" → "flood_reports"
     private fun fetchFloodReports() {
         lifecycleScope.launch {
             try {
@@ -155,21 +152,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     .select()
                     .decodeList<FloodReport>()
 
-                Log.d("FloodWatch", "Total reports: ${reports.size}")
-                reports.forEach { Log.d("FloodWatch", "Status: ${it.status}") }
-
-                // ✅ TAMA — uppercase() compare sa "PENDING"
                 val count = reports.count { it.status.uppercase() == "PENDING" }
-
-                Log.d("FloodWatch", "PENDING count: $count")
 
                 _binding?.let { b ->
                     b.textViewActiveAlerts.text = String.format("%02d", count)
                     if (count > 0) {
                         b.textViewEvacStatus.text = "READY"
-                        b.textViewEvacStatus.setTextColor(
-                            android.graphics.Color.parseColor("#0EA5E9")
-                        )
+                        b.textViewEvacStatus.setTextColor(android.graphics.Color.parseColor("#0EA5E9"))
                     } else {
                         b.textViewEvacStatus.text = "NONE"
                         b.textViewEvacStatus.setTextColor(android.graphics.Color.GRAY)
@@ -178,13 +167,16 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
                 googleMap.clear()
                 reports.filter { it.status.uppercase() == "PENDING" }.forEach { report ->
+                    // [CnS] Requirement: Parameter, Vehicle Passability & Timestamp basis
+                    val timestamp = report.createdAt?.let { formatReportDate(it) } ?: ""
+                    val details = "Level: ${report.floodLevel ?: "N/A"} | Passable: ${report.passability ?: "Unknown"}\nReported: $timestamp"
+                    
                     googleMap.addMarker(
                         MarkerOptions()
                             .position(LatLng(report.latitude, report.longitude))
                             .title("Flood Incident")
-                            .snippet(report.address)
-                            .icon(BitmapDescriptorFactory.defaultMarker(
-                                BitmapDescriptorFactory.HUE_BLUE))
+                            .snippet(details)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
                     )
                 }
 
@@ -194,7 +186,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    // ✅ BAGONG FUNCTION — kumukuha ng active alerts mula flood_alerts table
     private fun fetchFloodAlerts() {
         lifecycleScope.launch {
             try {
@@ -211,7 +202,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     if (alerts.isNotEmpty()) {
                         val latest = alerts.first()
                         b.textViewAlertTitle.text = latest.title
-                        b.textViewAlertDesc.text  = latest.message  // ✅ "message" hindi "description"
+                        b.textViewAlertDesc.text  = latest.message
                     } else {
                         b.textViewAlertTitle.text = "No active alerts"
                         b.textViewAlertDesc.text  = "All clear. No flood incidents reported."
@@ -243,6 +234,16 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private fun updateLastUpdated() {
         val sdf = SimpleDateFormat("hh:mm a, dd MMM yyyy", Locale.getDefault())
         _binding?.textLastUpdated?.text = "Last updated: ${sdf.format(Date())}"
+    }
+
+    private fun formatReportDate(dateStr: String): String {
+        return try {
+            val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            val output = SimpleDateFormat("h:mm a", Locale.getDefault())
+            output.format(input.parse(dateStr)!!)
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     override fun onResume() {

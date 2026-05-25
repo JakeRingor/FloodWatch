@@ -33,7 +33,12 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
 
         holder.textSeverity.text = "Severity ${report.severity ?: "N/A"}"
         holder.textDate.text = report.createdAt?.let { formatDate(it) } ?: ""
-        holder.textFloodLevel.text = "Water Level: ${report.floodLevel ?: "Unknown"}"
+        
+        // [CnS] Requirement: Combined Parameter and Passability without changing UI design
+        val levelInfo = report.floodLevel ?: "N/A"
+        val passInfo = report.passability ?: "Unknown"
+        holder.textFloodLevel.text = "Level: $levelInfo | Passable: $passInfo"
+        
         holder.textAddress.text = report.address ?: "No address"
         holder.textDescription.text = report.description ?: "No description"
 

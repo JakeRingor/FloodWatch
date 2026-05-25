@@ -2,22 +2,22 @@ package com.example.floodwatch
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.location.Geocoder
-import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -27,9 +27,6 @@ import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -41,7 +38,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.button.MaterialButton
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.PostgresAction
@@ -53,6 +50,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.contentOrNull
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
 
 class ReportFragment : Fragment(), OnMapReadyCallback {
@@ -66,360 +64,160 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     private var realtimeChannel: RealtimeChannel? = null
     private var locationDetected = false
     private var btnAutoDetect: MaterialButton? = null
-    private var locationCallback: LocationCallback? = null
 
-    // ✅ BAGO — Uri para sa full resolution photo
     private lateinit var photoUri: Uri
 
-    // ── Camera permission launcher ──────────────────────────
-    private val cameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
+    private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) launchCamera()
         else Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
     }
 
-    // ✅ BAGO — Full resolution camera (hindi na TakePicturePreview)
-    private val cameraLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
-            // I-decode ang full resolution photo mula sa file
-            val bitmap = BitmapFactory.decodeStream(
-                requireContext().contentResolver.openInputStream(photoUri)
-            )
-            capturedBitmap = bitmap
-            Toast.makeText(requireContext(), "✅ Photo captured!", Toast.LENGTH_SHORT).show()
+            val bitmap = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(photoUri))
+            if (bitmap != null) showImagePreviewDialog(bitmap)
         }
     }
 
-    // ── Location permission launcher ────────────────────────
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            getCurrentLocation()
-        } else {
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) getCurrentLocation()
+        else {
             resetAutoDetectButton()
             Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // ────────────────────────────────────────────────────────
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_report, container, false)
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         textViewAddress = view.findViewById(R.id.textViewAddress)
         btnAutoDetect = view.findViewById(R.id.buttonAutoDetect)
 
         view.findViewById<MaterialButton>(R.id.buttonGallery).setOnClickListener {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                launchCamera()
-            } else {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera()
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
-
-        view.findViewById<MaterialButton>(R.id.buttonSubmit).setOnClickListener { submitReport() }
+        view.findViewById<MaterialButton>(R.id.buttonSubmit).setOnClickListener { showReportDetailsDialog() }
         btnAutoDetect?.setOnClickListener { checkLocationPermission() }
-
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(this)
-        } else {
-            Log.e("FloodWatch", "❌ SupportMapFragment is NULL!")
-        }
+        (childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment)?.getMapAsync(this)
     }
 
-    // ✅ BAGO — Gumagawa ng temp file at binubuksan ang native camera app
     private fun launchCamera() {
-        val photoFile = File.createTempFile(
-            "flood_${System.currentTimeMillis()}",
-            ".jpg",
-            requireContext().cacheDir
-        )
-        photoUri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.provider",
-            photoFile
-        )
+        val photoFile = File.createTempFile("flood_${System.currentTimeMillis()}", ".jpg", requireContext().cacheDir)
+        photoUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.provider", photoFile)
         cameraLauncher.launch(photoUri)
     }
 
-    // ── Map ready ────────────────────────────────────────────
+    private fun showImagePreviewDialog(bitmap: Bitmap) {
+        val previewView = ImageView(requireContext()).apply {
+            setImageBitmap(bitmap)
+            adjustViewBounds = true
+            setPadding(20, 20, 20, 20)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Preview Photo")
+            .setMessage("Is this photo clear? You can retake it if needed.")
+            .setView(previewView)
+            .setPositiveButton("Use Photo") { _, _ -> capturedBitmap = bitmap }
+            .setNegativeButton("Retake") { _, _ -> launchCamera() }
+            .setCancelable(false).show()
+    }
+
     override fun onMapReady(googleMap: GoogleMap) {
-        Log.d("FloodWatch", "✅ onMapReady called!")
         mGoogleMap = googleMap
-        mGoogleMap?.moveCamera(
-            CameraUpdateFactory.newLatLngZoom(
-                LatLng(AppLocation.LAT, AppLocation.LNG),
-                AppLocation.DEFAULT_ZOOM
-            )
-        )
+        mGoogleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(AppLocation.LAT, AppLocation.LNG), AppLocation.DEFAULT_ZOOM))
         setupRealtime()
     }
 
-    // ── Realtime flood report markers ────────────────────────
     private fun setupRealtime() {
         lifecycleScope.launch {
             try {
                 realtimeChannel = SupabaseClient.client.channel("reports-channel")
-                val broadcastFlow = realtimeChannel!!
-                    .postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
-                        table = "flood_reports"
-                    }
+                val broadcastFlow = realtimeChannel!!.postgresChangeFlow<PostgresAction.Insert>(schema = "public") { table = "flood_reports" }
                 realtimeChannel!!.subscribe()
-
                 broadcastFlow.collect { action ->
                     val data = action.record
                     val lat = data["latitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0
                     val lng = data["longitude"]?.jsonPrimitive?.doubleOrNull ?: 0.0
                     val address = data["address"]?.jsonPrimitive?.contentOrNull ?: "New Flood Report"
-
                     activity?.runOnUiThread {
-                        val loc = LatLng(lat, lng)
-                        mGoogleMap?.addMarker(MarkerOptions().position(loc).title(address))
-                        Toast.makeText(requireContext(), "🚨 New report: $address", Toast.LENGTH_SHORT).show()
+                        mGoogleMap?.addMarker(MarkerOptions().position(LatLng(lat, lng)).title(address))
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("FloodWatch", "Realtime error: ${e.message}")
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { Log.e("FloodWatch", "Realtime Error: ${e.message}") }
         }
     }
 
-    // ── Unsubscribe on destroy ───────────────────────────────
-    override fun onDestroyView() {
-        super.onDestroyView()
-        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
-        lifecycleScope.launch {
-            try { realtimeChannel?.unsubscribe() } catch (e: Exception) { e.printStackTrace() }
-        }
-    }
-
-    // ── Location permission check ────────────────────────────
     private fun checkLocationPermission() {
-        when {
-            ContextCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getCurrentLocation()
-            }
-
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                Toast.makeText(
-                    requireContext(),
-                    "Location permission is needed to auto-detect your area.",
-                    Toast.LENGTH_LONG
-                ).show()
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-
-            else -> {
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) getCurrentLocation()
+        else requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    // ── Get current location (with fallback) ─────────────────
     private fun getCurrentLocation() {
         btnAutoDetect?.isEnabled = false
         btnAutoDetect?.text = "Detecting…"
-        textViewAddress.text = "Getting your location…"
-
-        val locationManager = requireContext()
-            .getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-
-        if (!isGpsEnabled && !isNetworkEnabled) {
-            textViewAddress.text = "Could not detect location. Enable GPS."
-            resetAutoDetectButton()
-            showEnableGpsDialog()
-            return
-        }
-
+        val cts = CancellationTokenSource()
         try {
-            val cts = CancellationTokenSource()
-            fusedLocationClient
-                .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        onLocationReceived(location.latitude, location.longitude)
-                    } else {
-                        getLastKnownLocation()
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("FloodWatch", "getCurrentLocation failed: ${e.message}")
-                    getLastKnownLocation()
-                }
-        } catch (e: SecurityException) {
-            textViewAddress.text = "Location permission error"
-            resetAutoDetectButton()
-            e.printStackTrace()
-        }
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
+                .addOnSuccessListener { location -> if (location != null) onLocationReceived(location.latitude, location.longitude) else resetAutoDetectButton() }
+        } catch (e: SecurityException) { resetAutoDetectButton() }
     }
 
-    // ── Fallback: last known location ────────────────────────
-    private fun getLastKnownLocation() {
-        try {
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        onLocationReceived(location.latitude, location.longitude)
-                        Toast.makeText(
-                            requireContext(),
-                            "Using last known location",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        requestSingleLocationUpdate()
-                    }
-                }
-                .addOnFailureListener {
-                    textViewAddress.text = "Location error. Try again."
-                    resetAutoDetectButton()
-                }
-        } catch (e: SecurityException) {
-            resetAutoDetectButton()
-            e.printStackTrace()
-        }
-    }
-
-    // ── Final fallback: request live GPS update ───────────────
-    private fun requestSingleLocationUpdate() {
-        try {
-            textViewAddress.text = "Waiting for GPS signal…"
-
-            val locationRequest = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, 1000L
-            ).setMaxUpdates(1).build()
-
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(result: LocationResult) {
-                    fusedLocationClient.removeLocationUpdates(this)
-                    locationCallback = null
-                    val location = result.lastLocation
-                    if (location != null) {
-                        onLocationReceived(location.latitude, location.longitude)
-                    } else {
-                        if (isAdded) {
-                            textViewAddress.text = "Could not detect location. Enable GPS."
-                            resetAutoDetectButton()
-                            showEnableGpsDialog()
-                        }
-                    }
-                }
-            }
-
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback!!,
-                Looper.getMainLooper()
-            )
-
-            view?.postDelayed({
-                locationCallback?.let {
-                    fusedLocationClient.removeLocationUpdates(it)
-                    locationCallback = null
-                }
-                if (!locationDetected && isAdded) {
-                    textViewAddress.text = "GPS timeout. Please try again."
-                    resetAutoDetectButton()
-                }
-            }, 15_000L)
-
-        } catch (e: SecurityException) {
-            resetAutoDetectButton()
-            showEnableGpsDialog()
-            e.printStackTrace()
-        }
-    }
-
-    // ── Location received — update map + address ─────────────
     private fun onLocationReceived(lat: Double, lng: Double) {
-        currentLat = lat
-        currentLng = lng
-        locationDetected = true
-
+        currentLat = lat; currentLng = lng; locationDetected = true
         val userLatLng = LatLng(lat, lng)
-        mGoogleMap?.clear()
-        mGoogleMap?.addMarker(MarkerOptions().position(userLatLng).title("Your Location"))
+        mGoogleMap?.clear(); mGoogleMap?.addMarker(MarkerOptions().position(userLatLng).title("Your Location"))
         mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 17f))
-
-        btnAutoDetect?.isEnabled = true
-        btnAutoDetect?.text = "Re-detect Location"
-
+        btnAutoDetect?.isEnabled = true; btnAutoDetect?.text = "Re-detect Location"
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
-        if (Build.VERSION.SDK_INT >= 33) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             geocoder.getFromLocation(lat, lng, 1) { addresses ->
-                activity?.runOnUiThread {
-                    textViewAddress.text = if (addresses.isNotEmpty())
-                        addresses[0].getAddressLine(0)
-                    else
-                        "Lat: %.5f, Lng: %.5f".format(lat, lng)
-                }
+                activity?.runOnUiThread { textViewAddress.text = if (addresses.isNotEmpty()) addresses[0].getAddressLine(0) else "Lat: %.5f, Lng: %.5f".format(lat, lng) }
             }
         } else {
             @Suppress("DEPRECATION")
             val addresses = geocoder.getFromLocation(lat, lng, 1)
-            textViewAddress.text = if (!addresses.isNullOrEmpty())
-                addresses[0].getAddressLine(0)
-            else
-                "Lat: %.5f, Lng: %.5f".format(lat, lng)
+            textViewAddress.text = if (!addresses.isNullOrEmpty()) addresses[0].getAddressLine(0) else "Lat: %.5f, Lng: %.5f".format(lat, lng)
         }
     }
 
-    // ── GPS dialog ───────────────────────────────────────────
-    private fun showEnableGpsDialog() {
-        if (!isAdded) return
-        AlertDialog.Builder(requireContext())
-            .setTitle("Enable GPS")
-            .setMessage("Your GPS appears to be off. Please enable Location Services to auto-detect your area.")
-            .setPositiveButton("Open Settings") { _, _ ->
-                startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+    private fun resetAutoDetectButton() { btnAutoDetect?.isEnabled = true; btnAutoDetect?.text = "Auto Detect Location" }
+
+    private fun showReportDetailsDialog() {
+        if (capturedBitmap == null || !locationDetected) {
+            Toast.makeText(requireContext(), "Please capture a photo and detect location first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val levels = arrayOf("LOW", "MID", "HIGH", "CRITICAL")
+        val passabilityOptions = arrayOf("PASSABLE TO ALL", "NOT FOR LIGHT VEHICLES", "NOT PASSABLE")
+        var selectedLevel = levels[0]; var selectedPassability = passabilityOptions[0]
+        AlertDialog.Builder(requireContext()).setTitle("Flood Level").setSingleChoiceItems(levels, 0) { _, which -> selectedLevel = levels[which] }
+            .setPositiveButton("Next") { _, _ ->
+                AlertDialog.Builder(requireContext()).setTitle("Vehicle Passability").setSingleChoiceItems(passabilityOptions, 0) { _, which -> selectedPassability = passabilityOptions[which] }
+                    .setPositiveButton("Submit") { _, _ -> submitReport(selectedLevel, selectedPassability) }.show()
+            }.setNegativeButton("Cancel", null).show()
     }
 
-    // ── Reset button state ───────────────────────────────────
-    private fun resetAutoDetectButton() {
-        btnAutoDetect?.isEnabled = true
-        btnAutoDetect?.text = "Auto Detect Location"
+    private fun addOverlayToBitmap(bitmap: Bitmap, address: String): Bitmap {
+        val result = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        val paint = Paint().apply {
+            color = Color.WHITE; textSize = (bitmap.height / 35).toFloat(); typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true; setShadowLayer(3f, 2f, 2f, Color.BLACK)
+        }
+        val timestamp = SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault()).format(Date())
+        canvas.drawText(address, 40f, result.height - 40f, paint)
+        canvas.drawText(timestamp, 40f, result.height - 40f - (paint.textSize + 10), paint)
+        return result
     }
 
-    // ── Submit report ────────────────────────────────────────
-    private fun submitReport() {
-        if (capturedBitmap == null) {
-            Toast.makeText(requireContext(), "Please take a photo first", Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!locationDetected) {
-            Toast.makeText(requireContext(), "Please detect your location first", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val currentUserId = SupabaseClient.client.auth.currentUserOrNull()?.id
-        if (currentUserId == null) {
-            Toast.makeText(requireContext(), "Please login to submit a report", Toast.LENGTH_SHORT).show()
-            return
-        }
-
+    private fun submitReport(level: String, passability: String) {
+        val currentUserId = SupabaseClient.client.auth.currentUserOrNull()?.id ?: return
         val progressBar = view?.findViewById<ProgressBar>(R.id.progressBar)
         val btnSubmit = view?.findViewById<MaterialButton>(R.id.buttonSubmit)
 
@@ -427,54 +225,34 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
             try {
                 progressBar?.visibility = View.VISIBLE
                 btnSubmit?.isEnabled = false
-                btnSubmit?.text = "Submitting…"
-
-                // ✅ 90% quality para malinaw pero hindi masyadong malaki ang file
+                val addressStr = textViewAddress.text.toString()
+                val processedBitmap = addOverlayToBitmap(capturedBitmap!!, addressStr)
                 val outputStream = ByteArrayOutputStream()
-                capturedBitmap!!.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
-                val bytes = outputStream.toByteArray()
-
+                processedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
                 val fileName = "report_${System.currentTimeMillis()}.jpg"
                 val bucket = SupabaseClient.client.storage.from("flood-reports")
-                bucket.upload(path = fileName, data = bytes)
+                bucket.upload(path = fileName, data = outputStream.toByteArray())
                 val imageUrl = bucket.publicUrl(fileName)
 
-                val reportData = FloodReport(
-                    userId = currentUserId,
-                    imageUrl = imageUrl,
-                    address = textViewAddress.text.toString(),
-                    latitude = currentLat,
-                    longitude = currentLng,
-                    floodLevel = "LOW",
-                    description = null
+                val report = FloodReport(
+                    userId = currentUserId, imageUrl = imageUrl, address = addressStr,
+                    latitude = currentLat, longitude = currentLng, floodLevel = level,
+                    passability = passability, status = "pending", severity = 1,
+                    description = "User reported flood incident"
                 )
 
-                SupabaseClient.client.postgrest.from("flood_reports").insert(reportData)
-
+                SupabaseClient.client.from("flood_reports").insert(report)
                 if (isAdded) {
-                    Toast.makeText(requireContext(), "✅ Report submitted!", Toast.LENGTH_LONG).show()
-                    capturedBitmap = null
-                    locationDetected = false
-                    textViewAddress.text = "Press 'Auto Detect' to get your location"
-                    btnAutoDetect?.text = "Auto Detect Location"
-                    mGoogleMap?.clear()
-                    mGoogleMap?.moveCamera(
-                        CameraUpdateFactory.newLatLngZoom(
-                            LatLng(AppLocation.LAT, AppLocation.LNG),
-                            AppLocation.DEFAULT_ZOOM
-                        )
-                    )
+                    Toast.makeText(requireContext(), "✅ Report submitted successfully!", Toast.LENGTH_LONG).show()
+                    capturedBitmap = null; locationDetected = false; mGoogleMap?.clear()
                 }
-
             } catch (e: Exception) {
-                Log.e("FloodWatch", "Submit error: ${e.message}")
+                Log.e("FloodWatch", "Submit Error: ${e.message}")
                 if (isAdded) {
-                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    AlertDialog.Builder(requireContext()).setTitle("Submission Error").setMessage("Detail: ${e.localizedMessage}").setPositiveButton("OK", null).show()
                 }
             } finally {
-                progressBar?.visibility = View.GONE
-                btnSubmit?.isEnabled = true
-                btnSubmit?.text = "Submit Report"
+                progressBar?.visibility = View.GONE; btnSubmit?.isEnabled = true
             }
         }
     }

@@ -19,20 +19,24 @@ This plan outlines the steps to implement the features requested in the "CnS" li
 *   **Goal:** Provide specific details on which vehicles can pass and the exact flood parameters.
 *   **Changes:**
     *   **Data Model (`FloodWatchModels.kt`):** Ensure `FloodReport` includes:
-        *   `water_level`: Specific parameter (e.g., "30cm", "Knee High").
+        *   `flood_level`: Specific parameter (e.g., "30cm", "Knee High").
         *   `passability`: Vehicle status (e.g., "Not passable for light vehicles").
         *   `timestamp`: Accurate report time.
-    *   **Logic (`HomeFragment.kt`):** Update the Map Marker snippet to display this data:
-        ```kotlin
-        .snippet("Level: ${report.water_level} | Passability: ${report.passability}")
-        ```
-*   **Impact:** Adds critical info to the existing map markers without adding new UI elements or buttons.
+    *   **Logic (`HomeFragment.kt` & `FloodReportAdapter.kt`):** Update UI logic to display these parameters in map markers and lists.
+*   **Impact:** Adds critical info to the existing UI without adding new elements.
 
-## 4. Database & Safety
+## 4. Image Overlay (Timestamp & Location)
+*   **Goal:** Embed the reporting time and location address directly into the captured image for verification.
+*   **Changes:**
+    *   Implement `addOverlayToBitmap` in `ReportFragment.kt` using `Canvas` and `Paint`.
+    *   Overlay current date/time and geocoded address onto the bottom-left of the image before uploading to Supabase.
+*   **Impact:** Enhances the credibility of visual proof provided by citizens.
+
+## 5. Database & Safety
 *   **Goal:** Ensure data integrity in Supabase.
 *   **Changes:**
-    *   Verify `flood_reports` table schema in Supabase matches the updated Kotlin models.
-*   **Safety Note:** No XML layouts will be modified. All changes are restricted to Kotlin logic and existing Map components.
+    *   Verify `flood_reports` table schema in Supabase has the `passability` (TEXT) column.
+*   **Safety Note:** No XML layouts were modified. All changes are restricted to Kotlin logic and existing Map/List components.
 
 ---
-**Status:** Ready for Implementation.
+**Status:** Implementation Complete.

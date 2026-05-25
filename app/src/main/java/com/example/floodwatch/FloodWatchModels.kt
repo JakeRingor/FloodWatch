@@ -58,12 +58,15 @@ data class FloodReport(
     val longitude: Double = 0.0,
 
     @SerialName("flood_level")
-    val floodLevel: String? = null,   // ← String na, hindi enum
+    val floodLevel: String? = null,
+
+    @SerialName("passability")
+    val passability: String? = null, // New field for CnS requirement
 
     val description: String? = null,
     val severity: Int? = null,
 
-    val status: String = "pending",   // ← String na, hindi enum
+    val status: String = "pending",
 
     @SerialName("created_at")
     val createdAt: String? = null
