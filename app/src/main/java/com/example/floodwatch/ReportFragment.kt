@@ -23,7 +23,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -65,17 +64,17 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     private var locationDetected = false
     private var btnAutoDetect: MaterialButton? = null
 
-    private lateinit var photoUri: Uri
-
     private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) launchCamera()
         else Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
     }
 
-    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            val bitmap = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(photoUri))
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val path = result.data?.getStringExtra(CameraCaptureActivity.EXTRA_PHOTO_PATH)
+            val bitmap = path?.let(CameraCaptureActivity::decodeOrientedBitmap)
             if (bitmap != null) showImagePreviewDialog(bitmap)
+            else Toast.makeText(requireContext(), "Could not load photo", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -94,8 +93,7 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         btnAutoDetect = view.findViewById(R.id.buttonAutoDetect)
 
         view.findViewById<MaterialButton>(R.id.buttonGallery).setOnClickListener {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera()
-            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            detectLocationBeforeCamera()
         }
         view.findViewById<MaterialButton>(R.id.buttonSubmit).setOnClickListener { showReportDetailsDialog() }
         btnAutoDetect?.setOnClickListener { checkLocationPermission() }
@@ -108,9 +106,27 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun launchCamera() {
-        val photoFile = File.createTempFile("flood_${System.currentTimeMillis()}", ".jpg", requireContext().cacheDir)
-        photoUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.provider", photoFile)
-        cameraLauncher.launch(photoUri)
+        cameraLauncher.launch(android.content.Intent(requireContext(), CameraCaptureActivity::class.java))
+    }
+
+    private fun detectLocationBeforeCamera() {
+        if (locationDetected) {
+            requestCameraPermissionOrLaunch()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Please tap Auto Detect Location before opening the camera",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun requestCameraPermissionOrLaunch() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
 
     private fun showImagePreviewDialog(bitmap: Bitmap) {
@@ -186,14 +202,17 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun resetAutoDetectButton() { btnAutoDetect?.isEnabled = true; btnAutoDetect?.text = "Auto Detect Location" }
+    private fun resetAutoDetectButton() {
+        btnAutoDetect?.isEnabled = true
+        btnAutoDetect?.text = "Auto Detect Location"
+    }
 
     private fun showReportDetailsDialog() {
         if (capturedBitmap == null || !locationDetected) {
             Toast.makeText(requireContext(), "Please capture a photo and detect location first", Toast.LENGTH_SHORT).show()
             return
         }
-        val levels = arrayOf("LOW", "MID", "HIGH", "CRITICAL")
+        val levels = arrayOf("LOW", "MODERATE", "HIGH", "CRITICAL")
         val passabilityOptions = arrayOf("PASSABLE TO ALL", "NOT FOR LIGHT VEHICLES", "NOT PASSABLE")
         var selectedLevel = levels[0]; var selectedPassability = passabilityOptions[0]
         AlertDialog.Builder(requireContext()).setTitle("Flood Level").setSingleChoiceItems(levels, 0) { _, which -> selectedLevel = levels[which] }

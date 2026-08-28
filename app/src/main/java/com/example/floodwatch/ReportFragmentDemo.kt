@@ -24,7 +24,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -71,9 +70,6 @@ class ReportFragmentDemo : Fragment(), OnMapReadyCallback {
     private lateinit var radioGroupFloodLevel: RadioGroup
     private lateinit var textVehiclePassability: TextView
 
-    // ✅ BAGO — Uri para sa full resolution photo
-    private lateinit var photoUri: Uri
-
     // ── Camera permission launcher ──────────────────────────
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -83,20 +79,22 @@ class ReportFragmentDemo : Fragment(), OnMapReadyCallback {
     }
 
     // ✅ BAGO — Full resolution camera (hindi na TakePicturePreview)
+    // CameraX full-resolution result
     private val cameraLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            // I-decode ang full resolution photo mula sa file
-            val bitmap = BitmapFactory.decodeStream(
-                requireContext().contentResolver.openInputStream(photoUri)
-            )
-            capturedBitmap = bitmap
-            Toast.makeText(requireContext(), "✅ Photo captured!", Toast.LENGTH_SHORT).show()
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val path = result.data?.getStringExtra(CameraCaptureActivity.EXTRA_PHOTO_PATH)
+            val bitmap = path?.let(CameraCaptureActivity::decodeOrientedBitmap)
+            if (bitmap != null) {
+                capturedBitmap = bitmap
+                Toast.makeText(requireContext(), "Photo captured!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Could not load photo", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    // ── Location permission launcher ────────────────────────
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -124,13 +122,7 @@ class ReportFragmentDemo : Fragment(), OnMapReadyCallback {
         setupFloodParameterDemo()
 
         view.findViewById<MaterialButton>(R.id.buttonGallery).setOnClickListener {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                launchCamera()
-            } else {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
+            detectLocationBeforeCamera()
         }
 
         view.findViewById<MaterialButton>(R.id.buttonSubmit).setOnClickListener { submitReport() }
@@ -151,17 +143,29 @@ class ReportFragmentDemo : Fragment(), OnMapReadyCallback {
 
     // ✅ BAGO — Gumagawa ng temp file at binubuksan ang native camera app
     private fun launchCamera() {
-        val photoFile = File.createTempFile(
-            "flood_${System.currentTimeMillis()}",
-            ".jpg",
-            requireContext().cacheDir
-        )
-        photoUri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.provider",
-            photoFile
-        )
-        cameraLauncher.launch(photoUri)
+        cameraLauncher.launch(Intent(requireContext(), CameraCaptureActivity::class.java))
+    }
+
+    private fun detectLocationBeforeCamera() {
+        if (locationDetected) {
+            requestCameraPermissionOrLaunch()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Please tap Auto Detect Location before opening the camera",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun requestCameraPermissionOrLaunch() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            launchCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
 
     // ── Map ready ────────────────────────────────────────────

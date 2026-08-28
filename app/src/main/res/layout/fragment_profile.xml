@@ -59,6 +59,7 @@
                         android:contentDescription="@string/profile_image_desc"/>
 
                     <ImageView
+                        android:id="@+id/profileEditButton"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="bottom|end"

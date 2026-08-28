@@ -1,5 +1,7 @@
 package com.example.floodwatch
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,10 +10,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.FragmentHomeBinding
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
@@ -29,6 +36,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var googleMap: GoogleMap
     private var currentOverlay: TileOverlay? = null
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) fetchGpsAltitude()
+        else _binding?.textViewElevation?.text = "GPS permission required"
+    }
 
     private val apiKey: String = BuildConfig.OPENWEATHER_API_KEY
     private var currentLayer = "precipitation_new"
@@ -79,10 +93,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         binding.buttonRainLayer.setOnClickListener { switchWeatherLayer("precipitation_new") }
         binding.buttonTempLayer.setOnClickListener { switchWeatherLayer("temp_new") }
         binding.buttonCloudLayer.setOnClickListener { switchWeatherLayer("clouds_new") }
+        binding.buttonMyLocation.setOnClickListener { fetchGpsAltitude() }
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        // A custom lower-right location button is used instead of Google's top-right button.
+        googleMap.uiSettings.isMyLocationButtonEnabled = false
         
         // [CnS] Requirement: Include above sea level area (satellite/hybrid for prediction)
         googleMap.mapType = GoogleMap.MAP_TYPE_HYBRID
@@ -91,9 +108,51 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         googleMap.isTrafficEnabled = true
         
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KINGSVILLE, 15f))
+        fetchGpsAltitude()
         binding.textViewStatus.text = "Kingsville • Rizal Weather"
         refreshData()
         handler.postDelayed(refreshRunnable, refreshInterval)
+    }
+
+    private fun fetchGpsAltitude() {
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
+        }
+
+        binding.textViewElevation.text = "Reading GPS elevation..."
+        if (::googleMap.isInitialized) {
+            // The blue dot shows the exact position represented by the GPS altitude badge.
+            googleMap.isMyLocationEnabled = true
+        }
+        val client = LocationServices.getFusedLocationProviderClient(requireActivity())
+        val token = CancellationTokenSource()
+        client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token.token)
+            .addOnSuccessListener { location ->
+                if (location?.hasAltitude() == true) {
+                    val accuracy = if (location.hasVerticalAccuracy()) {
+                        " ±%.0f m".format(location.verticalAccuracyMeters)
+                    } else ""
+                    _binding?.textViewElevation?.text =
+                        "GPS elevation: %.1f m$accuracy".format(location.altitude)
+                    if (::googleMap.isInitialized) {
+                        val devicePosition = LatLng(location.latitude, location.longitude)
+                        googleMap.animateCamera(
+                            CameraUpdateFactory.newLatLngZoom(devicePosition, 16f)
+                        )
+                    }
+                } else {
+                    _binding?.textViewElevation?.text = "GPS elevation unavailable"
+                }
+            }
+            .addOnFailureListener { error ->
+                Log.e("GpsAltitude", "Unable to read altitude: ${error.message}")
+                _binding?.textViewElevation?.text = "GPS elevation unavailable"
+            }
     }
 
     private fun refreshData() {

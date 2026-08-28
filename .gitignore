@@ -1,1 +1,15 @@
+# Machine-specific Android/Gradle files
+local.properties
+.gradle/
+.idea/
+.kotlin/
 
+# Generated build outputs
+build/
+app/build/
+*.iml
+node_modules/
+supabase/.temp/
+
+# Local database backups may contain private user/report data
+supabase/backups/
