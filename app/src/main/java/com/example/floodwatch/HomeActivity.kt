@@ -22,33 +22,45 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Edge-to-edge insets setup
+        if (savedInstanceState == null) {
+            val session = SupabaseClient.client.auth.currentSessionOrNull()
+            if (session == null) {
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return
+            }
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
-        // Red dot badge on Alerts tab
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, systemBars.bottom)
+            insets
+        }
+
         val alertsBadge = binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts)
         alertsBadge.isVisible = true
         alertsBadge.backgroundColor = Color.RED
 
-        // Bottom Navigation logic
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             if (binding.bottomNavigation.selectedItemId == item.itemId) {
                 return@setOnItemSelectedListener false
             }
 
             val selectedFragment: Fragment = when (item.itemId) {
-                R.id.navigation_home    -> HomeFragment()
-                R.id.navigation_report  -> ReportFragment()
-                R.id.navigation_alerts  -> {
+                R.id.navigation_home -> HomeFragment()
+                R.id.navigation_report -> ReportFragment()
+                R.id.navigation_alerts -> {
                     alertsBadge.isVisible = false
                     AlertsFragment()
                 }
                 R.id.navigation_profile -> ProfileFragment()
-                else                    -> HomeFragment()
+                else -> HomeFragment()
             }
 
             supportFragmentManager.beginTransaction()
@@ -64,15 +76,6 @@ class HomeActivity : AppCompatActivity() {
                 .replace(R.id.fragment_container, HomeFragment())
                 .commit()
             binding.bottomNavigation.selectedItemId = R.id.navigation_home
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
-        if (session == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
         }
     }
 }

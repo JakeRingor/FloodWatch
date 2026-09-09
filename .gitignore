@@ -1,15 +1,15 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Machine-specific Android/Gradle files
 local.properties
+.gradle/
+.idea/
+.kotlin/
+
+# Generated build outputs
+build/
+app/build/
+*.iml
+node_modules/
+supabase/.temp/
+
+# Local database backups may contain private user/report data
+supabase/backups/

@@ -189,7 +189,7 @@
                     app:boxStrokeColor="#191C1D"
                     app:boxBackgroundColor="#F7FAFD"
                     app:endIconMode="password_toggle"
-                    app:helperText="Minimum 6 characters"
+                    app:helperText="Minimum 12 characters"
                     android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -252,7 +252,7 @@
                     android:id="@+id/buttonSignUp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Create Account  →"
+                    android:text="Create Account"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold"

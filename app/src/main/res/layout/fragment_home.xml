@@ -53,35 +53,6 @@
                         android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:orientation="horizontal">
-
-                    <ImageButton
-                        android:id="@+id/buttonSearch"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:padding="8dp"
-                        app:srcCompat="@drawable/ic_search"
-                        app:tint="#1A2E4A"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Search" />
-
-                    <ImageButton
-                        android:id="@+id/buttonMenu"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:padding="8dp"
-                        app:srcCompat="@drawable/ic_menu"
-                        app:tint="#1A2E4A"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Menu" />
-                </LinearLayout>
-
             </RelativeLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
@@ -122,8 +93,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_alignParentStart="true"
-                    android:layout_toStartOf="@+id/badgesLayout">
+                    android:layout_alignParentStart="true">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -169,56 +139,6 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <!-- RIGHT: HIGH / RI / SK badges -->
-                <!-- FIX: wrap_content + alignParentEnd + vertical stack -->
-                <LinearLayout
-                    android:id="@+id/badgesLayout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="HIGH"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="RI"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="SK"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp" />
-                </LinearLayout>
-
             </RelativeLayout>
 
             <!-- ── Map Card ── -->
@@ -229,7 +149,7 @@
                 app:cardElevation="6dp"
                 android:layout_marginBottom="14dp">
 
-                <RelativeLayout
+                <com.example.floodwatch.MapTouchRelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="#0F2040">
@@ -242,6 +162,39 @@
                         app:uiCompass="true"
                         app:uiZoomControls="false"
                         app:uiZoomGestures="true" />
+
+                    <TextView
+                        android:id="@+id/textViewElevation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_margin="10dp"
+                        android:background="#EFFFFFFF"
+                        android:elevation="4dp"
+                        android:paddingStart="10dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="7dp"
+                        android:text="Elevation: -- m ASL"
+                        android:textColor="#1E3A5F"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <ImageButton
+                        android:id="@+id/buttonMyLocation"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentBottom="true"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="88dp"
+                        android:background="@drawable/bg_map_button"
+                        android:contentDescription="Go to my location"
+                        android:elevation="6dp"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_my_location"
+                        app:tint="#1E3A5F" />
 
                     <!-- Live Sensor Overlay -->
 
@@ -368,7 +321,7 @@
 
                     </LinearLayout>
 
-                </RelativeLayout>
+                </com.example.floodwatch.MapTouchRelativeLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- ── Alert Card ── -->
@@ -440,9 +393,10 @@
                         android:layout_height="wrap_content">
 
                         <TextView
+                            android:id="@+id/textViewAlertUpdated"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Updated 2 min ago"
+                            android:text="Updated --"
                             android:textColor="#93AEC8"
                             android:textSize="11sp"
                             android:layout_alignParentStart="true"
@@ -452,7 +406,7 @@
                             android:id="@+id/textViewAlertDetails"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Details →"
+                            android:text="Details"
                             android:textColor="#2563EB"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -578,25 +532,6 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- ── Report Local Flood Button ── -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonReportFlood"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Report Local Flood"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:padding="16dp"
-                android:layout_marginBottom="20dp"
-                app:backgroundTint="#2563EB"
-                app:cornerRadius="14dp"
-                app:icon="@drawable/ic_location_pin"
-                app:iconTint="#FFFFFF"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp" />
-
-            <!-- ══ Stats Grid 2×2 ══ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -609,6 +544,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
+                    <!-- Card 1: Rainfall -->
                     <!-- Card 1: Rainfall -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
@@ -632,6 +568,7 @@
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
+                                android:minLines="2"
                                 android:lineSpacingMultiplier="1.3"
                                 android:layout_marginBottom="12dp" />
 
@@ -686,6 +623,8 @@
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
+                                android:minLines="2"
+                                android:lineSpacingMultiplier="1.3"
                                 android:layout_marginBottom="12dp" />
 
                             <LinearLayout
@@ -747,6 +686,7 @@
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
+                                android:minLines="2"
                                 android:lineSpacingMultiplier="1.3"
                                 android:layout_marginBottom="12dp" />
 
@@ -800,6 +740,7 @@
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
+                                android:minLines="2"
                                 android:lineSpacingMultiplier="1.3"
                                 android:layout_marginBottom="12dp" />
 
@@ -809,7 +750,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="--"
                                 android:textColor="#0EA5E9"
-                                android:textSize="36sp"
+                                android:textSize="28sp"
                                 android:textStyle="bold" />
 
                         </LinearLayout>

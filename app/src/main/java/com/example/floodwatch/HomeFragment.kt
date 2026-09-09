@@ -1,5 +1,7 @@
 package com.example.floodwatch
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,12 +10,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.FragmentHomeBinding
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -28,6 +36,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var googleMap: GoogleMap
     private var currentOverlay: TileOverlay? = null
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) fetchGpsAltitude()
+        else _binding?.textViewElevation?.text = "GPS permission required"
+    }
 
     private val apiKey: String = BuildConfig.OPENWEATHER_API_KEY
     private var currentLayer = "precipitation_new"
@@ -47,7 +62,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             .create(OpenWeatherApi::class.java)
     }
 
-    private val refreshInterval = 3 * 60 * 1000L
+    // [CnS] Requirement: Update every 15 mins to know flood conditions
+    private val refreshInterval = 15 * 60 * 1000L
     private val handler = Handler(Looper.getMainLooper())
 
     private val refreshRunnable = object : Runnable {
@@ -77,26 +93,73 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         binding.buttonRainLayer.setOnClickListener { switchWeatherLayer("precipitation_new") }
         binding.buttonTempLayer.setOnClickListener { switchWeatherLayer("temp_new") }
         binding.buttonCloudLayer.setOnClickListener { switchWeatherLayer("clouds_new") }
+        binding.buttonMyLocation.setOnClickListener { fetchGpsAltitude() }
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-
-        // Dito natin ilalagay ang Map sa Kingsville
+        // A custom lower-right location button is used instead of Google's top-right button.
+        googleMap.uiSettings.isMyLocationButtonEnabled = false
+        
+        // [CnS] Requirement: Include above sea level area (satellite/hybrid for prediction)
+        googleMap.mapType = GoogleMap.MAP_TYPE_HYBRID
+        
+        // [CnS] Requirement: Traffic info for vehicle passability basis
+        googleMap.isTrafficEnabled = true
+        
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KINGSVILLE, 15f))
-
-        // Label update: Pwedeng ganito ang format
+        fetchGpsAltitude()
         binding.textViewStatus.text = "Kingsville • Rizal Weather"
-
         refreshData()
         handler.postDelayed(refreshRunnable, refreshInterval)
+    }
+
+    private fun fetchGpsAltitude() {
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
+        }
+
+        binding.textViewElevation.text = "Reading GPS elevation..."
+        if (::googleMap.isInitialized) {
+            // The blue dot shows the exact position represented by the GPS altitude badge.
+            googleMap.isMyLocationEnabled = true
+        }
+        val client = LocationServices.getFusedLocationProviderClient(requireActivity())
+        val token = CancellationTokenSource()
+        client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token.token)
+            .addOnSuccessListener { location ->
+                if (location?.hasAltitude() == true) {
+                    val accuracy = if (location.hasVerticalAccuracy()) {
+                        " ±%.0f m".format(location.verticalAccuracyMeters)
+                    } else ""
+                    _binding?.textViewElevation?.text =
+                        "GPS elevation: %.1f m$accuracy".format(location.altitude)
+                    if (::googleMap.isInitialized) {
+                        val devicePosition = LatLng(location.latitude, location.longitude)
+                        googleMap.animateCamera(
+                            CameraUpdateFactory.newLatLngZoom(devicePosition, 16f)
+                        )
+                    }
+                } else {
+                    _binding?.textViewElevation?.text = "GPS elevation unavailable"
+                }
+            }
+            .addOnFailureListener { error ->
+                Log.e("GpsAltitude", "Unable to read altitude: ${error.message}")
+                _binding?.textViewElevation?.text = "GPS elevation unavailable"
+            }
     }
 
     private fun refreshData() {
         addWeatherOverlay(currentLayer)
         updateLastUpdated()
         fetchFloodReports()
-        // Dito natin kukunin ang Weather para sa buong Rizal
+        fetchFloodAlerts()
         fetchWeatherData(RIZAL_LAT, RIZAL_LON)
     }
 
@@ -105,7 +168,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             try {
                 val response = weatherApi.getWeather(lat, lon, apiKey)
                 _binding?.let { b ->
-                    // 1. Update Text Data
                     b.textViewTemp.text = "${response.main.temp.toInt()}°C"
                     b.textViewCondition.text = response.weather.firstOrNull()?.main ?: "--"
                     b.textViewHumidity.text = "${response.main.humidity}% Humidity"
@@ -114,13 +176,25 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val rainVal = response.rain?.oneHour ?: 0.0
                     b.textViewRainfall.text = rainVal.toInt().toString()
 
-                    // 2. Dynamic Icon Logic
+                    val temp = response.main.temp
                     val condition = response.weather.firstOrNull()?.main ?: ""
+
                     when {
-                        condition.contains("Rain", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
-                        condition.contains("Cloud", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
-                        condition.contains("Clear", true) -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
-                        else -> b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun) // Default
+                        temp >= 32 -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
+                        condition.contains("Rain", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_rain)
+                        }
+                        condition.contains("Cloud", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_cloud)
+                        }
+                        condition.contains("Clear", true) -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
+                        else -> {
+                            b.imageViewWeatherIcon.setImageResource(R.drawable.ic_sun)
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -133,16 +207,16 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         lifecycleScope.launch {
             try {
                 val reports = SupabaseClient.client.postgrest
-                    .from("reports")
+                    .from("flood_reports")
                     .select()
                     .decodeList<FloodReport>()
 
-                _binding?.let { b ->
-                    val count = reports.size
-                    b.textViewActiveAlerts.text = String.format("%02d", count)
+                // Counter sa dashboard — PENDING pa rin (hindi pa na-verify)
+                val pendingCount = reports.count { it.status.uppercase() == "PENDING" }
 
-                    // Update Evac Status base sa dami ng reports
-                    if (count > 0) {
+                _binding?.let { b ->
+                    b.textViewActiveAlerts.text = String.format("%02d", pendingCount)
+                    if (pendingCount > 0) {
                         b.textViewEvacStatus.text = "READY"
                         b.textViewEvacStatus.setTextColor(android.graphics.Color.parseColor("#0EA5E9"))
                     } else {
@@ -151,19 +225,77 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     }
                 }
 
+                // Map markers — VERIFIED na reports lang
                 googleMap.clear()
-                reports.forEach { report ->
+                reports.filter { it.status.uppercase() == "VERIFIED" }.forEach { report ->
+                    val timestamp = report.createdAt?.let { formatReportDate(it) } ?: ""
+                    val details = "Level: ${report.floodLevel ?: "N/A"} | Passable: ${report.passability ?: "Unknown"}\nReported: $timestamp"
+
                     googleMap.addMarker(
                         MarkerOptions()
                             .position(LatLng(report.latitude, report.longitude))
-                            .title("Flood Incident")
-                            .snippet(report.address)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                            .title("✓ Verified Flood Report")
+                            .snippet(details)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
                     )
                 }
+
             } catch (e: Exception) {
                 Log.e("FloodWatch", "Supabase Error: ${e.message}")
             }
+        }
+    }
+
+    private fun fetchFloodAlerts() {
+        lifecycleScope.launch {
+            try {
+                val alerts = SupabaseClient.client.postgrest
+                    .from("flood_alerts")
+                    .select {
+                        filter {
+                            eq("is_active", true)
+                        }
+                    }
+                    .decodeList<FloodAlert>()
+
+                _binding?.let { b ->
+                    if (alerts.isNotEmpty()) {
+                        val latest = alerts.first()
+                        b.textViewAlertTitle.text = latest.title
+                        b.textViewAlertDesc.text  = latest.message
+                        b.textViewAlertUpdated.text = formatRelativeTime(latest.createdAt)
+                    } else {
+                        b.textViewAlertTitle.text = "No active alerts"
+                        b.textViewAlertDesc.text  = "All clear. No flood incidents reported."
+                        b.textViewAlertUpdated.text = ""
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FloodWatch", "Alerts Error: ${e.message}")
+            }
+        }
+    }
+
+    private fun formatRelativeTime(dateStr: String?): String {
+        if (dateStr == null) return ""
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            val alertTime = sdf.parse(dateStr)?.time ?: return ""
+            val now = System.currentTimeMillis()
+            val diffMs = now - alertTime
+
+            val minutes = diffMs / 60_000
+            val hours   = diffMs / 3_600_000
+            val days    = diffMs / 86_400_000
+
+            when {
+                minutes < 1  -> "Updated just now"
+                minutes < 60 -> "Updated ${minutes} min ago"
+                hours   < 24 -> "Updated ${hours} hr ago"
+                else         -> "Updated ${days} day${if (days > 1) "s" else ""} ago"
+            }
+        } catch (e: Exception) {
+            ""
         }
     }
 
@@ -189,7 +321,24 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         _binding?.textLastUpdated?.text = "Last updated: ${sdf.format(Date())}"
     }
 
-    override fun onResume() { super.onResume(); binding.mapView.onResume() }
+    private fun formatReportDate(dateStr: String): String {
+        return try {
+            val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            val output = SimpleDateFormat("h:mm a", Locale.getDefault())
+            output.format(input.parse(dateStr)!!)
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.mapView.onResume()
+        if (::googleMap.isInitialized) {
+            fetchFloodReports()
+            fetchFloodAlerts()
+        }
+    }
     override fun onPause() { super.onPause(); binding.mapView.onPause() }
     override fun onDestroyView() {
         super.onDestroyView()

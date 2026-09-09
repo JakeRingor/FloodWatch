@@ -8,33 +8,30 @@
     android:background="#F0F4F8"
     tools:context=".HomeActivity">
 
-    <!-- Fragment Container -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- Thin separator above nav bar -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#1A2E4A"
         android:alpha="0.2" />
 
-    <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
+        android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#1A2E4A"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
-        app:itemRippleColor="#33FFFFFF"
+        app:itemIconSize="24dp"
+        app:itemPaddingTop="15dp"
+        app:itemPaddingBottom="15dp"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu"
-        app:itemActiveIndicatorStyle="@style/Widget.MaterialComponents.BottomNavigationView.Colored" />
+        app:elevation="0dp" />
 
 </LinearLayout>

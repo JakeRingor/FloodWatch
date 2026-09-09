@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -14,9 +15,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-
-
 
 class SignupActivity : AppCompatActivity() {
 
@@ -42,7 +40,7 @@ class SignupActivity : AppCompatActivity() {
             val fullName        = binding.editTextFullName.text.toString().trim()
             val phone           = binding.editTextPhone.text.toString().trim()
 
-            // Validation
+            // ── Validation ─────────────────────────────────────────
             if (email.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
                 Toast.makeText(this, "Please fill in all required fields!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -51,8 +49,15 @@ class SignupActivity : AppCompatActivity() {
                 Toast.makeText(this, "Enter a valid email address.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (password.length < 6) {
-                Toast.makeText(this, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            if (password.length < 12) {
+                Toast.makeText(this, "Password must be at least 12 characters.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val passwordRegex = Regex("^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%^&*]).{12,}\$")
+            if (!passwordRegex.matches(password)) {
+                Toast.makeText(this,
+                    "Password must have uppercase, number, and special character (!@#\$%^&*).",
+                    Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (password != confirmPassword) {
@@ -64,55 +69,52 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Loading state
+            // ── Loading State ──────────────────────────────────────
             binding.buttonSignUp.isEnabled = false
             binding.buttonSignUp.text = "Creating account…"
 
             lifecycleScope.launch {
                 try {
-                    // STEP 1: Signup with Email
                     SupabaseClient.client.auth.signUpWith(Email) {
                         this.email = email
                         this.password = password
                     }
 
-                    // STEP 2: Kunin ang User ID (Sa v3, ito ang pinaka-reliable na paraan)
                     val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
 
                     if (userId != null) {
-                        // STEP 3: Insert sa profiles table
                         val profile = UserProfile(
                             id = userId,
-                            full_name = fullName,
-                            phone_number = phone,
+                            fullName = fullName,
+                            phoneNumber = phone,
                             address = ""
                         )
-
-                        // Ginagamit ang postgrest extension para sa insert
-                        SupabaseClient.client.from("profiles").insert(profile)
-
-                        Toast.makeText(this@SignupActivity, "Account created! Check your email to verify.", Toast.LENGTH_LONG).show()
-
-                        // Balik sa Login
-                        startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
-                        finish()
-                    } else {
-                        // Kung sakaling hindi agad nakuha ang ID (hal. email confirmation is required)
-                        Toast.makeText(this@SignupActivity, "Verification email sent! Please verify first.", Toast.LENGTH_LONG).show()
-                        startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
-                        finish()
+                        SupabaseClient.client
+                            .from("user_profiles")
+                            .upsert(profile)
                     }
+
+                    // ── Show Verification Dialog ───────────────────
+                    AlertDialog.Builder(this@SignupActivity)
+                        .setTitle("Verify Your Email")
+                        .setMessage("A verification link has been sent to $email.\n\nPlease check your inbox and click the link before logging in.")
+                        .setPositiveButton("Go to Login") { _, _ ->
+                            startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
+                            finish()
+                        }
+                        .setCancelable(false)
+                        .show()
 
                 } catch (e: Exception) {
                     binding.buttonSignUp.isEnabled = true
-                    binding.buttonSignUp.text = "Create Account  →"
+                    binding.buttonSignUp.text = "Create Account"
                     Toast.makeText(this@SignupActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
 
         binding.textViewLogin.setOnClickListener {
-            finish() // Balik sa Login screen
+            finish()
         }
     }
 }

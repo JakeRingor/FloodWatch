@@ -1,11 +1,11 @@
 package com.example.floodwatch
 
-import android.content.Context // Import ito
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -31,9 +31,26 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
+        // ── Handle email verification deep link ────────────────
+        if (intent?.data?.host == "verify-email") {
+            AlertDialog.Builder(this)
+                .setTitle("Email Verified!")
+                .setMessage("Your email has been verified. You can now log in to your FloodWatch account.")
+                .setPositiveButton("OK", null)
+                .setCancelable(false)
+                .show()
+        }
+
+        // ── Pre-fill email if coming from ForgotPassword or ResetPassword ──
+        val prefillEmail = intent.getStringExtra("prefill_email")
+        if (!prefillEmail.isNullOrBlank()) {
+            binding.editTextEmail.setText(prefillEmail)
+            binding.editTextPassword.requestFocus()
+        }
+
         // ── Login ──────────────────────────────────────────────
         binding.buttonLogin.setOnClickListener {
-            val email    = binding.editTextEmail.text.toString().trim()
+            val email = binding.editTextEmail.text.toString().trim()
             val password = binding.editTextPassword.text.toString().trim()
 
             if (email.isEmpty() || password.isEmpty()) {
@@ -51,67 +68,97 @@ class LoginActivity : AppCompatActivity() {
                         this.password = password
                     }
 
-                    // [SESSION PERSISTENCE] I-save natin na naka-login na ang user
-                    val sharedPref = getSharedPreferences("FloodWatchPrefs", Context.MODE_PRIVATE)
-                    with (sharedPref.edit()) {
-                        putBoolean("isLoggedIn", true)
-                        apply()
+                    val user = SupabaseClient.client.auth.currentUserOrNull()
+
+                    if (user?.emailConfirmedAt == null) {
+                        SupabaseClient.client.auth.signOut()
+                        binding.buttonLogin.isEnabled = true
+                        binding.buttonLogin.text = "Login to Dashboard"
+                        AlertDialog.Builder(this@LoginActivity)
+                            .setTitle("Email Not Verified")
+                            .setMessage("Please check your inbox and click the verification link before logging in.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                        return@launch
                     }
 
                     startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                     finish()
+
                 } catch (e: Exception) {
                     binding.buttonLogin.isEnabled = true
-                    binding.buttonLogin.text = "Login to Dashboard  →"
-                    Toast.makeText(this@LoginActivity, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    binding.buttonLogin.text = "Login to Dashboard"
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Login failed: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
 
+        // ── Sign Up ────────────────────────────────────────────
         binding.textViewSignUp.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
         }
 
+        // ── Forgot Password → navigate to ForgotPasswordActivity ──
         binding.textViewForgot.setOnClickListener {
             val email = binding.editTextEmail.text.toString().trim()
-            if (email.isEmpty()) {
-                Toast.makeText(this, "Enter your email above to reset your password.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            lifecycleScope.launch {
-                try {
-                    SupabaseClient.client.auth.resetPasswordForEmail(email)
-                    Toast.makeText(this@LoginActivity, "Reset link sent to $email", Toast.LENGTH_LONG).show()
-                } catch (e: Exception) {
-                    Toast.makeText(this@LoginActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, ForgotPasswordActivity::class.java).apply {
+                if (email.isNotEmpty()) {
+                    putExtra("prefill_email", email)
                 }
             }
+            startActivity(intent)
         }
 
+        // ── Footer Links ───────────────────────────────────────
         binding.textViewStatus.setOnClickListener {
-            val url = "https://status.floodwatch.example.com"
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://status.floodwatch.example.com")
+                )
+            )
         }
 
         binding.textViewPrivacy.setOnClickListener {
-            val url = "https://floodwatch.example.com/privacy"
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://floodwatch.example.com/privacy")
+                )
+            )
         }
     }
 
     override fun onStart() {
         super.onStart()
 
-        // [SESSION CHECK] Gamit ang SharedPreferences para sigurado
-        val sharedPref = getSharedPreferences("FloodWatchPrefs", Context.MODE_PRIVATE)
-        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
+        val fromLogout = intent.getBooleanExtra("from_logout", false)
+        val fromReset = !intent.getStringExtra("prefill_email").isNullOrBlank()
+        val fromDeepLink = intent?.data?.host == "verify-email"
+        if (fromLogout || fromReset || fromDeepLink) return
 
-        // Check din natin sa Supabase para sure na valid ang session
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
+        try {
+            val session = SupabaseClient.client.auth.currentSessionOrNull()
+            if (session != null) {
+                val user = SupabaseClient.client.auth.currentUserOrNull()
 
-        if (isLoggedIn || session != null) {
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
+                // ── Block unverified users from auto-login ─────
+                if (user?.emailConfirmedAt == null) {
+                    lifecycleScope.launch {
+                        try { SupabaseClient.client.auth.signOut() } catch (e: Exception) { }
+                    }
+                    return
+                }
+
+                startActivity(Intent(this, HomeActivity::class.java))
+                finish()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

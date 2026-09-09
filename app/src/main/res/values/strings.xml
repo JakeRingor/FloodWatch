@@ -3,7 +3,6 @@
     <string name="google_maps_key">AIzaSyDOuzCVhnrFD3UhBjdJcbebi76hamwcMmw</string>
     <string name="last_updated">Last updated: %1$s</string>
 
-
     <string name="profile">Profile</string>
     <string name="user_name">Julius Raffy</string>
     <string name="user_email">Julius Raffy@kingsville.gov</string>
@@ -26,4 +25,8 @@
     <string name="back_button_desc">Back Button</string>
     <string name="stats_count_3">3</string>
     <string name="stats_count_2">2</string>
+
+    <string name="detecting">Detecting…</string>
+    <string name="re_detect_location">Re-detect Location</string>
+    <string name="auto_detect_location">Auto Detect Location</string>
 </resources>
