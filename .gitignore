@@ -1,3 +1,6 @@
+[System.IO.File]::WriteAllText(
+  "$PWD\.gitignore",
+  @"
 # Machine-specific Android/Gradle files
 local.properties
 .gradle/
@@ -13,3 +16,6 @@ supabase/.temp/
 
 # Local database backups may contain private user/report data
 supabase/backups/
+Microsoft/
+"@
+)

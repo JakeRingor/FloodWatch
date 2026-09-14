@@ -89,6 +89,15 @@
                     android:text="@string/user_email"
                     android:textSize="14sp"
                     android:textColor="#777"/>
+
+                <ProgressBar
+                    android:id="@+id/profileLoading"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
             </LinearLayout>
 
             <!-- Stats Cards -->
@@ -102,6 +111,7 @@
 
                 <!-- Reports -->
                 <LinearLayout
+                    android:id="@+id/submittedReportsCard"
                     android:layout_width="0dp"
                     android:layout_height="120dp"
                     android:layout_weight="1"
@@ -122,6 +132,7 @@
                         android:contentDescription="@null"/>
 
                     <TextView
+                        android:id="@+id/textViewReportsSubmittedCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/stats_count_3"
@@ -140,6 +151,7 @@
 
                 <!-- Verified -->
                 <LinearLayout
+                    android:id="@+id/verifiedReportsCard"
                     android:layout_width="0dp"
                     android:layout_height="120dp"
                     android:layout_weight="1"
@@ -160,6 +172,7 @@
                         android:contentDescription="@null"/>
 
                     <TextView
+                        android:id="@+id/textViewVerifiedCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/stats_count_2"
@@ -188,6 +201,7 @@
 
             <!-- Emergency Contact -->
             <LinearLayout
+                android:id="@+id/emergencyContactRow"
                 android:layout_width="match_parent"
                 android:layout_height="70dp"
                 android:background="@drawable/card_bg"
@@ -220,6 +234,7 @@
                     android:layout_marginStart="10dp">
 
                     <TextView
+                        android:id="@+id/textViewEmergencyContactName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/emergency_contact"
@@ -234,10 +249,18 @@
                         android:textColor="#9CA3AF"/>
                 </LinearLayout>
 
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow"
+                    app:tint="#9CA3AF"
+                    android:contentDescription="@null" />
+
             </LinearLayout>
 
             <!-- Home Zone -->
             <LinearLayout
+                android:id="@+id/homeZoneRow"
                 android:layout_width="match_parent"
                 android:layout_height="70dp"
                 android:background="@drawable/card_bg"
@@ -263,12 +286,14 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical"
                     android:layout_marginStart="10dp">
 
                     <TextView
+                        android:id="@+id/textViewHomeZoneAddress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/home_zone"
@@ -282,6 +307,13 @@
                         android:textSize="12sp"
                         android:textColor="#9CA3AF"/>
                 </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_arrow"
+                    app:tint="#9CA3AF"
+                    android:contentDescription="@null" />
 
             </LinearLayout>
 
@@ -331,6 +363,7 @@
                         android:layout_marginStart="10dp"/>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchFloodAlerts"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true"
@@ -366,6 +399,7 @@
                         android:layout_marginStart="10dp"/>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchWaterLevel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true"
@@ -401,6 +435,7 @@
                         android:layout_marginStart="10dp"/>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchCommunityNews"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         app:thumbTint="@color/switch_thumb_selector"

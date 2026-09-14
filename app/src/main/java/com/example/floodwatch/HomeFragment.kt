@@ -47,12 +47,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private val apiKey: String = BuildConfig.OPENWEATHER_API_KEY
     private var currentLayer = "precipitation_new"
 
-    // [SETTING 1] Coordinates para sa Kingsville (Para sa Map View)
-    private val KINGSVILLE = LatLng(14.6225, 121.1245)
+    // [SETTING 1] Coordinates para sa Sta. Ana, Taytay (Para sa Map View)
+    private val STA_ANA = LatLng(14.5374, 121.1099)
 
-    // [SETTING 2] Coordinates para sa Rizal Province (Para sa Weather Data)
-    private val RIZAL_LAT = 14.5845
-    private val RIZAL_LON = 121.1754
+    // [SETTING 2] Coordinates para sa Sta. Ana, Taytay (Para sa Weather Data)
+    private val STA_ANA_LAT = 14.5374
+    private val STA_ANA_LON = 121.1099
 
     private val weatherApi: OpenWeatherApi by lazy {
         Retrofit.Builder()
@@ -107,9 +107,9 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         // [CnS] Requirement: Traffic info for vehicle passability basis
         googleMap.isTrafficEnabled = true
         
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KINGSVILLE, 15f))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(STA_ANA, 15f))
         fetchGpsAltitude()
-        binding.textViewStatus.text = "Kingsville • Rizal Weather"
+        binding.textViewStatus.text = "Current Status • Sta. Ana, Taytay"
         refreshData()
         handler.postDelayed(refreshRunnable, refreshInterval)
     }
@@ -160,7 +160,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         updateLastUpdated()
         fetchFloodReports()
         fetchFloodAlerts()
-        fetchWeatherData(RIZAL_LAT, RIZAL_LON)
+        fetchWeatherData(STA_ANA_LAT, STA_ANA_LON)
     }
 
     private fun fetchWeatherData(lat: Double, lon: Double) {

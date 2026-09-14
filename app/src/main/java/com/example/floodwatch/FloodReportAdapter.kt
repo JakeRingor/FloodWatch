@@ -15,6 +15,7 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textSeverity: TextView = view.findViewById(R.id.textSeverity)
+        val textStatus: TextView = view.findViewById(R.id.textStatus)
         val textDate: TextView = view.findViewById(R.id.textDate)
         val textFloodLevel: TextView = view.findViewById(R.id.textFloodLevel)
         val textAddress: TextView = view.findViewById(R.id.textAddress)
@@ -32,6 +33,13 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
         val report = reports[position]
 
         holder.textSeverity.text = "Severity ${report.severity ?: "N/A"}"
+        holder.textStatus.text = report.status.uppercase()
+        holder.textStatus.setTextColor(when (report.status.uppercase()) {
+            "VERIFIED" -> android.graphics.Color.parseColor("#15803D")
+            "DISMISSED", "INVALID_IMAGE", "INVALID_INFORMATION" ->
+                android.graphics.Color.parseColor("#B91C1C")
+            else -> android.graphics.Color.parseColor("#B45309")
+        })
         holder.textDate.text = report.createdAt?.let { formatDate(it) } ?: ""
         
         // [CnS] Requirement: Combined Parameter and Passability without changing UI design
