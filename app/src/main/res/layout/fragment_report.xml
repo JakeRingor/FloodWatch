@@ -142,18 +142,41 @@
                 android:padding="32dp">
 
                 <ImageView
+                    android:id="@+id/capturePlaceholder"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_camera"
                     app:tint="#2563EB" />
 
                 <TextView
+                    android:id="@+id/captureTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="Capture Visual Proof"
                     android:textStyle="bold"
                     android:textColor="#0F2040" />
+
+                <ImageView
+                    android:id="@+id/capturedPhotoPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:adjustViewBounds="true"
+                    android:maxHeight="360dp"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Photo selected for this flood report"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/photoAnalysisResult"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:textColor="#0F2040"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonGallery"

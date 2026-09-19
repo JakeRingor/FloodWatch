@@ -44,6 +44,10 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.contentOrNull
@@ -55,6 +59,8 @@ import java.util.*
 class ReportFragment : Fragment(), OnMapReadyCallback {
 
     private var capturedBitmap: Bitmap? = null
+    private var analysisJob: Job? = null
+    private var analysisText = ""
     private lateinit var textViewAddress: TextView
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var mGoogleMap: GoogleMap? = null
@@ -73,7 +79,7 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val path = result.data?.getStringExtra(CameraCaptureActivity.EXTRA_PHOTO_PATH)
             val bitmap = path?.let(CameraCaptureActivity::decodeOrientedBitmap)
-            if (bitmap != null) showImagePreviewDialog(bitmap)
+            if (bitmap != null) showCapturedPhoto(bitmap)
             else Toast.makeText(requireContext(), "Could not load photo", Toast.LENGTH_SHORT).show()
         }
     }
@@ -102,6 +108,8 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        renderPhotoPreview()
+        capturedBitmap?.let { showCapturedPhoto(it) }
         (childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment)?.getMapAsync(this)
     }
 
@@ -129,19 +137,54 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun showImagePreviewDialog(bitmap: Bitmap) {
-        val previewView = ImageView(requireContext()).apply {
-            setImageBitmap(bitmap)
-            adjustViewBounds = true
-            setPadding(20, 20, 20, 20)
+    private fun renderPhotoPreview() {
+        val root = view ?: return
+        val hasPhoto = capturedBitmap != null
+        root.findViewById<ImageView>(R.id.capturedPhotoPreview).apply {
+            setImageBitmap(capturedBitmap)
+            visibility = if (hasPhoto) View.VISIBLE else View.GONE
         }
-        AlertDialog.Builder(requireContext())
-            .setTitle("Preview Photo")
-            .setMessage("Is this photo clear? You can retake it if needed.")
-            .setView(previewView)
-            .setPositiveButton("Use Photo") { _, _ -> capturedBitmap = bitmap }
-            .setNegativeButton("Retake") { _, _ -> launchCamera() }
-            .setCancelable(false).show()
+        root.findViewById<View>(R.id.capturePlaceholder).visibility = if (hasPhoto) View.GONE else View.VISIBLE
+        root.findViewById<TextView>(R.id.captureTitle).text = if (hasPhoto) "Review Your Photo" else "Capture Visual Proof"
+        root.findViewById<TextView>(R.id.photoAnalysisResult).apply {
+            text = analysisText
+            visibility = if (hasPhoto) View.VISIBLE else View.GONE
+        }
+        root.findViewById<MaterialButton>(R.id.buttonGallery).text = if (hasPhoto) "Retake Photo" else "Open Camera"
+    }
+
+    private fun showCapturedPhoto(bitmap: Bitmap) {
+        analysisJob?.cancel()
+        capturedBitmap = bitmap
+        analysisText = "Analyzing photo…"
+        renderPhotoPreview()
+        val appContext = requireContext().applicationContext
+        analysisJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val score = withContext(Dispatchers.Default) {
+                    FloodClassifier.predict(appContext, bitmap)
+                }
+                if (capturedBitmap === bitmap) {
+                    val label = if (score >= FloodClassifier.THRESHOLD) "FLOOD" else "NO FLOOD"
+                    analysisText = "Result: $label\nFlood score: %.1f%%\n\nThis estimate can be wrong. Confirm the conditions before reporting.".format(score * 100)
+                    renderPhotoPreview()
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.e("FloodWatch", "Photo analysis failed", error)
+                if (capturedBitmap === bitmap) {
+                    analysisText = "Photo analysis unavailable. You can still submit the conditions you observed."
+                    renderPhotoPreview()
+                }
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        analysisJob?.cancel()
+        analysisJob = null
+        super.onDestroyView()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -264,6 +307,9 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 if (isAdded) {
                     Toast.makeText(requireContext(), "✅ Report submitted successfully!", Toast.LENGTH_LONG).show()
                     capturedBitmap = null; locationDetected = false; mGoogleMap?.clear()
+                    analysisJob?.cancel()
+                    analysisText = ""
+                    renderPhotoPreview()
                 }
             } catch (e: Exception) {
                 Log.e("FloodWatch", "Submit Error: ${e.message}")
