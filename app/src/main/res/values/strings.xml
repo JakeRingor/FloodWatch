@@ -10,9 +10,9 @@
     <string name="verified_submissions">VERIFIED SUBMISSIONS</string>
     <string name="emergency_settings">Emergency Settings</string>
     <string name="emergency_contact">Emergency Contact</string>
-    <string name="emergency_contact_name">Marlon Gurion (Friend)</string>
+    <string name="emergency_contact_name">Family or Friends</string>
     <string name="home_zone">Home Zone</string>
-    <string name="home_zone_address">28 Kingsville</string>
+    <string name="home_zone_address">Sta. Ana, Taytay, Rizal</string>
     <string name="notification_preferences">Notification Preferences</string>
     <string name="flood_alerts">Flood Alerts</string>
     <string name="water_level_changes">Water Level Changes</string>

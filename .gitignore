@@ -13,3 +13,4 @@ supabase/.temp/
 
 # Local database backups may contain private user/report data
 supabase/backups/
+Microsoft/

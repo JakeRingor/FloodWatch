@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FloodWatch Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="wave">🌊</div>
+      <span>FloodWatch</span>
+      <span class="badge">ADMIN</span>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to manage flood reports and alerts</p>
+    <div class="field-label">Email</div>
+    <input class="field-input" type="email" id="adminEmail" placeholder="admin@floodwatch.com" />
+    <div class="field-label">Password</div>
+    <input class="field-input" type="password" id="adminPassword" placeholder="••••••••••••" />
+    <button class="btn-primary" onclick="adminLogin()">Sign In →</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <nav class="navbar">
+    <div class="nav-left">
+      <span class="nav-logo">🌊 FloodWatch</span>
+      <span class="nav-badge">ADMIN PANEL</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-admin" id="adminEmailDisplay"></span>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-icon" style="background:rgba(245,158,11,0.15)">⏳</div>
+      <div class="stat-info">
+        <div class="num" id="statPending">—</div>
+        <div class="label">Pending Reports</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon" style="background:rgba(16,185,129,0.15)">✅</div>
+      <div class="stat-info">
+        <div class="num" id="statVerified">—</div>
+        <div class="label">Verified Reports</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon" style="background:rgba(37,99,235,0.15)">📢</div>
+      <div class="stat-info">
+        <div class="num" id="statAlerts">—</div>
+        <div class="label">Active Alerts</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon" style="background:rgba(99,102,241,0.15)">📂</div>
+      <div class="stat-info">
+        <div class="num" id="statHistory">—</div>
+        <div class="label">Report History</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- LEFT: Reports -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <div class="panel-title">Flood Reports</div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('PENDING', this)">Pending <span class="count" id="tabCountPending">0</span></button>
+          <button class="tab" onclick="switchTab('VERIFIED', this)">Verified <span class="count" id="tabCountVerified">0</span></button>
+          <button class="tab" onclick="switchTab('HISTORY', this)">History <span class="count" id="tabCountHistory">0</span></button>
+        </div>
+      </div>
+      <div class="reports-list" id="reportsList">
+        <div class="loading">Loading reports…</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Post Alert -->
+    <div class="right-panel">
+      <div class="panel-title">📢 Post Flood Alert</div>
+      <div class="alert-form">
+        <div class="form-group">
+          <div class="field-label">Title</div>
+          <input class="form-input" id="alertTitle" placeholder="e.g. Flood Warning — Sta. Ana, Taytay" />
+        </div>
+        <div class="form-group">
+          <div class="field-label">Message</div>
+          <textarea class="form-textarea" id="alertMessage" placeholder="Describe the flood situation…"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="field-label">Severity Level</div>
+          <div class="severity-picker">
+            <div class="sev-option sev-advisory selected" onclick="selectSeverity('ADVISORY', this)">🟢 Advisory</div>
+            <div class="sev-option sev-watch" onclick="selectSeverity('WATCH', this)">🟡 Watch</div>
+            <div class="sev-option sev-warning" onclick="selectSeverity('WARNING', this)">🔴 Warning</div>
+            <div class="sev-option sev-critical" onclick="selectSeverity('CRITICAL', this)">🟣 Critical</div>
+          </div>
+        </div>
+        <button class="btn-post-alert" onclick="postAlert()">Post Alert →</button>
+      </div>
+
+      <div class="active-alerts">
+        <div class="active-alerts-title">Active Alerts</div>
+        <div id="activeAlertsList"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- VERIFY MODAL -->
+<div class="verify-modal-overlay" id="verifyModal" onclick="closeVerifyModal()">
+  <div class="verify-modal" onclick="event.stopPropagation()">
+    <div class="verify-modal-title">📋 Categorize Report</div>
+    <p class="verify-modal-sub">Select the outcome for this report</p>
+    <div class="verify-options">
+      <button class="verify-opt opt-verified" onclick="confirmVerify('VERIFIED')">
+        <span class="opt-icon">✅</span>
+        <span class="opt-label">Verified</span>
+        <span class="opt-desc">Report is accurate and confirmed</span>
+      </button>
+      <button class="verify-opt opt-dismissed" onclick="confirmVerify('DISMISSED')">
+        <span class="opt-icon">❌</span>
+        <span class="opt-label">Dismissed</span>
+        <span class="opt-desc">Report is not confirmed or no longer actionable</span>
+      </button>
+      <button class="verify-opt opt-invalid-image" onclick="confirmVerify('INVALID_IMAGE')">
+        <span class="opt-icon">🖼️</span>
+        <span class="opt-label">Invalid Image</span>
+        <span class="opt-desc">Photo is missing, fake, or irrelevant</span>
+      </button>
+      <button class="verify-opt opt-invalid-info" onclick="confirmVerify('INVALID_INFORMATION')">
+        <span class="opt-icon">📋</span>
+        <span class="opt-label">Invalid Information</span>
+        <span class="opt-desc">Details are inaccurate or unverifiable</span>
+      </button>
+    </div>
+    <button class="verify-cancel" onclick="closeVerifyModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">✕</span>
+  <img id="lightboxImg" src="" alt="Full image" />
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

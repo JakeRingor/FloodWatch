@@ -6,11 +6,11 @@ import kotlinx.serialization.Serializable
 // ── APP LOCATION CONSTANTS ────────────────────────────────────────────────────
 
 object AppLocation {
-    const val BARANGAY     = "Kingsville Executive Village"
-    const val MUNICIPALITY = "Cainta"
+    const val BARANGAY     = "Sta. Ana"
+    const val MUNICIPALITY = "Taytay"
     const val PROVINCE     = "Rizal"
-    const val LAT          = 14.5760  // ⚠️ I-verify sa Google Maps
-    const val LNG          = 121.1058 // ⚠️ I-verify sa Google Maps
+    const val LAT          = 14.5374
+    const val LNG          = 121.1099
     const val DEFAULT_ZOOM = 16f
 }
 
