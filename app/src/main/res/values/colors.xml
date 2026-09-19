@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+
+
+
+
+    // Profile
+    <color name="switch_thumb">#2563EB</color>
+    <color name="switch_track">#93C5FD</color>
 </resources>
