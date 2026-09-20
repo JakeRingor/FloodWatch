@@ -141,6 +141,7 @@
                         android:textColor="#2563EB"/>
 
                     <TextView
+                        android:id="@+id/textViewHomeZoneValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/reports_submitted"
@@ -371,77 +372,6 @@
                         app:trackTint="@color/switch_track_selector"/>
                 </LinearLayout>
 
-                <!-- Water Level -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <LinearLayout
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/icon_circle_bg"
-                        android:gravity="center">
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_drop"
-                            android:contentDescription="@null"/>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/water_level_changes"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="10dp"/>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchWaterLevel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        app:thumbTint="@color/switch_thumb_selector"
-                        app:trackTint="@color/switch_track_selector"/>
-                </LinearLayout>
-
-                <!-- Community News -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <LinearLayout
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/icon_circle_bg"
-                        android:gravity="center">
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_community"
-                            android:contentDescription="@null"/>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/community_news"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="10dp"/>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchCommunityNews"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:thumbTint="@color/switch_thumb_selector"
-                        app:trackTint="@color/switch_track_selector"/>
-                </LinearLayout>
-
             </LinearLayout>
 
             <!-- Edit Profile -->
@@ -537,8 +467,11 @@
                 android:layout_height="55dp"
                 android:text="@string/log_out"
                 android:textColor="#D32F2F"
-                app:backgroundTint="@null"
-                android:background="@drawable/logout_bg"
+                app:backgroundTint="#FDECEC"
+                app:strokeColor="#F3B5B5"
+                app:strokeWidth="1dp"
+                app:iconTint="#D32F2F"
+                app:cornerRadius="14dp"
                 android:drawableStart="@drawable/ic_logout"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"

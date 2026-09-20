@@ -10,9 +10,11 @@ import io.github.jan.supabase.realtime.Realtime
 object SupabaseClient {
 
     private lateinit var _client: io.github.jan.supabase.SupabaseClient
+    private lateinit var sessionManager: SharedPreferencesSessionManager
     val client get() = _client
 
     fun init(context: Context) {
+        sessionManager = SharedPreferencesSessionManager(context.applicationContext)
         _client = createSupabaseClient(
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
@@ -20,11 +22,18 @@ object SupabaseClient {
             install(Auth) {
                 alwaysAutoRefresh = true
                 // ✅ Dito na naka-save ang session kahit isara ang app
-                sessionManager = SharedPreferencesSessionManager(context.applicationContext)
+                sessionManager = this@SupabaseClient.sessionManager
             }
             install(Postgrest)
             install(Storage)
             install(Realtime)
         }
     }
+
+    fun setPersistentSessionsEnabled(enabled: Boolean) {
+        sessionManager.setPersistentSessionsEnabled(enabled)
+    }
+
+    fun isPersistentSessionsEnabled(): Boolean =
+        sessionManager.isPersistentSessionsEnabled()
 }

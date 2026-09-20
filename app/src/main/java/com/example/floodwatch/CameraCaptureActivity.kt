@@ -102,7 +102,19 @@ class CameraCaptureActivity : AppCompatActivity() {
 
         /** BitmapFactory ignores JPEG EXIF orientation, so rotate/flip it explicitly. */
         fun decodeOrientedBitmap(path: String): Bitmap? {
-            val bitmap = BitmapFactory.decodeFile(path) ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            var sampleSize = 1
+            while (bounds.outWidth / sampleSize > MAX_BITMAP_EDGE ||
+                bounds.outHeight / sampleSize > MAX_BITMAP_EDGE
+            ) sampleSize *= 2
+
+            val bitmap = BitmapFactory.decodeFile(
+                path,
+                BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            ) ?: return null
             val orientation = try {
                 ExifInterface(path).getAttributeInt(
                     ExifInterface.TAG_ORIENTATION,
@@ -137,5 +149,7 @@ class CameraCaptureActivity : AppCompatActivity() {
             return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
                 .also { corrected -> if (corrected !== bitmap) bitmap.recycle() }
         }
+
+        private const val MAX_BITMAP_EDGE = 2048
     }
 }

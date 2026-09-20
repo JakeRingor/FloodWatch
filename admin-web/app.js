@@ -8,7 +8,7 @@ const ADMIN_EMAIL = 'floodwatchstaana@gmail.com';
 
 let currentTab = 'PENDING';
 let selectedSeverity = 'ADVISORY';
-let allReports = { PENDING: [], VERIFIED: [], DISMISSED: [], INVALID_IMAGE: [], INVALID_INFORMATION: [] };
+let allReports = { PENDING: [], VERIFIED: [], DISMISSED: [], INVALID_IMAGE: [], INVALID_INFORMATION: [], WITHDRAWN: [] };
 let reportsRealtimeChannel = null;
 let alertsRealtimeChannel = null;
 let realtimeRefreshTimer = null;
@@ -124,8 +124,10 @@ async function loadAllReports() {
   allReports.DISMISSED           = data.filter(r => normalizeStatus(r.status) === 'DISMISSED');
   allReports.INVALID_IMAGE       = data.filter(r => normalizeStatus(r.status) === 'INVALID_IMAGE');
   allReports.INVALID_INFORMATION = data.filter(r => normalizeStatus(r.status) === 'INVALID_INFORMATION');
+  allReports.WITHDRAWN            = data.filter(r => normalizeStatus(r.status) === 'WITHDRAWN');
 
-  const historyCount = allReports.DISMISSED.length + allReports.INVALID_IMAGE.length + allReports.INVALID_INFORMATION.length;
+  const historyCount = allReports.DISMISSED.length + allReports.INVALID_IMAGE.length +
+    allReports.INVALID_INFORMATION.length + allReports.WITHDRAWN.length;
 
   document.getElementById('statPending').textContent      = allReports.PENDING.length;
   document.getElementById('statVerified').textContent     = allReports.VERIFIED.length;
@@ -145,7 +147,8 @@ function renderReports(tab) {
     reports = [
       ...(allReports.DISMISSED || []),
       ...(allReports.INVALID_IMAGE || []),
-      ...(allReports.INVALID_INFORMATION || [])
+      ...(allReports.INVALID_INFORMATION || []),
+      ...(allReports.WITHDRAWN || [])
     ]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   } else {
@@ -163,6 +166,7 @@ function renderReports(tab) {
     if (s === 'DISMISSED')           return 'badge-dismissed';
     if (s === 'INVALID_IMAGE')       return 'badge-invalid';
     if (s === 'INVALID_INFORMATION') return 'badge-invalid';
+    if (s === 'WITHDRAWN')           return 'badge-dismissed';
     return 'badge-pending';
   };
 
@@ -170,6 +174,7 @@ function renderReports(tab) {
     if (s === 'DISMISSED')           return '❌ Dismissed';
     if (s === 'INVALID_IMAGE')       return '🖼️ Invalid Image';
     if (s === 'INVALID_INFORMATION') return '📋 Invalid Info';
+    if (s === 'WITHDRAWN')           return '↩ Withdrawn by reporter';
     return s;
   };
 
@@ -210,7 +215,7 @@ function renderReports(tab) {
       <div class="report-actions">
         <button class="btn-verify" onclick="updateReport(decodeURIComponent('${safeId}'), 'PENDING')">↩️ Unverify</button>
       </div>` : ''}
-    ${tab === 'HISTORY' ? `
+    ${tab === 'HISTORY' && normalizeStatus(r.status) !== 'WITHDRAWN' ? `
       <div class="report-actions">
         <button class="btn-verify" onclick="updateReport(decodeURIComponent('${safeId}'), 'PENDING')">↩️ Restore</button>
         <button class="btn-dismiss" onclick="deleteReport(decodeURIComponent('${safeId}'))">🗑️ Delete</button>

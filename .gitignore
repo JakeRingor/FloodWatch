@@ -1,13 +1,11 @@
-[System.IO.File]::WriteAllText(
-  "$PWD\.gitignore",
-  @"
 # Machine-specific Android/Gradle files
 local.properties
 .gradle/
+.android/
 .idea/
 .kotlin/
 
-# Generated build outputs
+# Generated build outputs and reports
 build/
 app/build/
 *.iml
@@ -16,6 +14,10 @@ supabase/.temp/
 
 # Local database backups may contain private user/report data
 supabase/backups/
+
+# Local working files and test screenshots
 Microsoft/
-"@
-)
+branding/
+*.zip
+device_*.png
+signup_hint_test.png

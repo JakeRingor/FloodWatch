@@ -6,8 +6,6 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Authentication tokens must never be copied to cloud backups. -->
+    <exclude domain="sharedpref" path="supabase_session.xml" />
 </full-backup-content>

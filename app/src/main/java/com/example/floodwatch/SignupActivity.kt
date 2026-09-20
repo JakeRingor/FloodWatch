@@ -2,7 +2,13 @@ package com.example.floodwatch
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.text.TextPaint
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -13,8 +19,10 @@ import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.ActivitySignupBinding
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
-import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import java.time.Instant
 
 class SignupActivity : AppCompatActivity() {
 
@@ -28,9 +36,29 @@ class SignupActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                maxOf(systemBars.bottom, keyboard.bottom)
+            )
             insets
         }
+
+        // Keep the lower password fields above the on-screen keyboard.
+        binding.editTextConfirmPassword.setOnFocusChangeListener { field, hasFocus ->
+            if (hasFocus) {
+                field.postDelayed({
+                    field.requestRectangleOnScreen(
+                        android.graphics.Rect(0, 0, field.width, field.height),
+                        true
+                    )
+                }, 250L)
+            }
+        }
+
+        setupLegalLinks()
 
         binding.buttonSignUp.setOnClickListener {
             val email           = binding.editTextEmail.text.toString().trim()
@@ -49,15 +77,8 @@ class SignupActivity : AppCompatActivity() {
                 Toast.makeText(this, "Enter a valid email address.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (password.length < 12) {
-                Toast.makeText(this, "Password must be at least 12 characters.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val passwordRegex = Regex("^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%^&*]).{12,}\$")
-            if (!passwordRegex.matches(password)) {
-                Toast.makeText(this,
-                    "Password must have uppercase, number, and special character (!@#\$%^&*).",
-                    Toast.LENGTH_LONG).show()
+            if (!PasswordRules.isValid(password)) {
+                Toast.makeText(this, PasswordRules.ERROR_MESSAGE, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (password != confirmPassword) {
@@ -78,20 +99,13 @@ class SignupActivity : AppCompatActivity() {
                     SupabaseClient.client.auth.signUpWith(Email) {
                         this.email = email
                         this.password = password
-                    }
-
-                    val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
-
-                    if (userId != null) {
-                        val profile = UserProfile(
-                            id = userId,
-                            fullName = fullName,
-                            phoneNumber = phone,
-                            address = ""
-                        )
-                        SupabaseClient.client
-                            .from("user_profiles")
-                            .upsert(profile)
+                        data = buildJsonObject {
+                            put("full_name", fullName)
+                            put("phone_number", phone)
+                            put("terms_version", LegalPolicy.TERMS_VERSION)
+                            put("privacy_version", LegalPolicy.PRIVACY_VERSION)
+                            put("legal_accepted_at", Instant.now().toString())
+                        }
                     }
 
                     // ── Show Verification Dialog ───────────────────
@@ -115,6 +129,37 @@ class SignupActivity : AppCompatActivity() {
 
         binding.textViewLogin.setOnClickListener {
             finish()
+        }
+    }
+
+    private fun setupLegalLinks() {
+        val text = "I agree to the Terms of Service and Privacy Policy"
+        val styled = SpannableString(text)
+        styled.setSpan(
+            legalLink { startActivity(LegalDocumentActivity.termsIntent(this)) },
+            text.indexOf("Terms of Service"),
+            text.indexOf("Terms of Service") + "Terms of Service".length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        styled.setSpan(
+            legalLink { startActivity(LegalDocumentActivity.privacyIntent(this)) },
+            text.indexOf("Privacy Policy"),
+            text.indexOf("Privacy Policy") + "Privacy Policy".length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        binding.textViewLegalAgreement.text = styled
+        binding.textViewLegalAgreement.movementMethod = LinkMovementMethod.getInstance()
+        binding.textViewLegalAgreement.highlightColor = android.graphics.Color.TRANSPARENT
+    }
+
+    private fun legalLink(action: () -> Unit) = object : ClickableSpan() {
+        override fun onClick(widget: View) = action()
+
+        override fun updateDrawState(drawState: TextPaint) {
+            super.updateDrawState(drawState)
+            drawState.color = android.graphics.Color.parseColor("#2563EB")
+            drawState.isUnderlineText = true
+            drawState.isFakeBoldText = true
         }
     }
 }

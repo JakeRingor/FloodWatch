@@ -32,6 +32,7 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private var reportStatusChannel: RealtimeChannel? = null
+    private var pendingVerifiedReportsOnly = false
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -44,13 +45,11 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (savedInstanceState == null) {
-            val session = SupabaseClient.client.auth.currentSessionOrNull()
-            if (session == null) {
-                startActivity(Intent(this, LoginActivity::class.java))
-                finish()
-                return
-            }
+        val session = SupabaseClient.client.auth.currentSessionOrNull()
+        if (session == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
@@ -81,7 +80,11 @@ class HomeActivity : AppCompatActivity() {
                     alertsBadge.isVisible = false
                     AlertsFragment()
                 }
-                R.id.navigation_my_reports -> MyReportsFragment()
+                R.id.navigation_my_reports -> {
+                    MyReportsFragment.newInstance(pendingVerifiedReportsOnly).also {
+                        pendingVerifiedReportsOnly = false
+                    }
+                }
                 R.id.navigation_profile -> ProfileFragment()
                 else -> HomeFragment()
             }
@@ -101,8 +104,16 @@ class HomeActivity : AppCompatActivity() {
         listenForReportApprovals()
     }
 
-    fun openMyReports() {
-        binding.bottomNavigation.selectedItemId = R.id.navigation_my_reports
+    fun openMyReports(verifiedOnly: Boolean = false) {
+        pendingVerifiedReportsOnly = verifiedOnly
+        if (binding.bottomNavigation.selectedItemId == R.id.navigation_my_reports) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, MyReportsFragment.newInstance(verifiedOnly))
+                .commit()
+            pendingVerifiedReportsOnly = false
+        } else {
+            binding.bottomNavigation.selectedItemId = R.id.navigation_my_reports
+        }
     }
 
     private fun openInitialDestination(sourceIntent: Intent) {
@@ -171,8 +182,7 @@ class HomeActivity : AppCompatActivity() {
         val notifiedIds = notificationPrefs.getStringSet(KEY_NOTIFIED_REPORT_EVENTS, emptySet())
             ?.toMutableSet() ?: mutableSetOf()
         val eventId = "$reportId:$status"
-        if (!notifiedIds.add(eventId)) return
-        notificationPrefs.edit().putStringSet(KEY_NOTIFIED_REPORT_EVENTS, notifiedIds).apply()
+        if (eventId in notifiedIds) return
 
         binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts).apply {
             isVisible = true
@@ -183,6 +193,9 @@ class HomeActivity : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
             android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return
+
+        notifiedIds.add(eventId)
+        notificationPrefs.edit().putStringSet(KEY_NOTIFIED_REPORT_EVENTS, notifiedIds).apply()
 
         val openAlertsIntent = Intent(this, HomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -216,6 +229,17 @@ class HomeActivity : AppCompatActivity() {
             .setContentIntent(pendingIntent)
             .build()
         NotificationManagerCompat.from(this).notify(eventId.hashCode(), notification)
+    }
+
+    override fun onDestroy() {
+        val channel = reportStatusChannel
+        reportStatusChannel = null
+        if (channel != null) {
+            lifecycleScope.launch {
+                runCatching { channel.unsubscribe() }
+            }
+        }
+        super.onDestroy()
     }
 
     private fun createReportStatusNotificationChannel() {

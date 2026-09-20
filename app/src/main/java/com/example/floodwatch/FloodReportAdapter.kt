@@ -7,10 +7,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
 import java.util.*
 
-class FloodReportAdapter(private val reports: List<FloodReport>) :
+class FloodReportAdapter(
+    private val reports: List<FloodReport>,
+    private val onWithdraw: ((FloodReport) -> Unit)? = null
+) :
     RecyclerView.Adapter<FloodReportAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -21,6 +25,7 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
         val textAddress: TextView = view.findViewById(R.id.textAddress)
         val textDescription: TextView = view.findViewById(R.id.textDescription)
         val imageReport: ImageView = view.findViewById(R.id.imageReport)
+        val buttonWithdraw: MaterialButton = view.findViewById(R.id.buttonWithdrawReport)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -36,7 +41,7 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
         holder.textStatus.text = report.status.uppercase()
         holder.textStatus.setTextColor(when (report.status.uppercase()) {
             "VERIFIED" -> android.graphics.Color.parseColor("#15803D")
-            "DISMISSED", "INVALID_IMAGE", "INVALID_INFORMATION" ->
+            "DISMISSED", "INVALID_IMAGE", "INVALID_INFORMATION", "WITHDRAWN" ->
                 android.graphics.Color.parseColor("#B91C1C")
             else -> android.graphics.Color.parseColor("#B45309")
         })
@@ -58,6 +63,14 @@ class FloodReportAdapter(private val reports: List<FloodReport>) :
                 .into(holder.imageReport)
         } else {
             holder.imageReport.visibility = View.GONE
+        }
+
+        val canWithdraw = report.id != null &&
+            report.status.equals("PENDING", ignoreCase = true) &&
+            onWithdraw != null
+        holder.buttonWithdraw.visibility = if (canWithdraw) View.VISIBLE else View.GONE
+        holder.buttonWithdraw.setOnClickListener {
+            if (canWithdraw) onWithdraw?.invoke(report)
         }
     }
 
