@@ -97,6 +97,11 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         textViewAddress = view.findViewById(R.id.textViewAddress)
         btnAutoDetect = view.findViewById(R.id.buttonAutoDetect)
+        view.findViewById<MaterialButton>(R.id.buttonFloodDemo).setOnClickListener {
+            if (childFragmentManager.findFragmentByTag("flood-level-demo") == null) {
+                FloodLevelDemoDialog().show(childFragmentManager, "flood-level-demo")
+            }
+        }
 
         view.findViewById<MaterialButton>(R.id.buttonGallery).setOnClickListener {
             detectLocationBeforeCamera()
