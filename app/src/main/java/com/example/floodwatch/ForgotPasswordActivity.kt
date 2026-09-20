@@ -1,7 +1,6 @@
 package com.example.floodwatch
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Patterns
 import android.view.View
@@ -99,22 +98,5 @@ class ForgotPasswordActivity : AppCompatActivity() {
         }
 
         // ── Footer Links ─────────────────────────────────────────────
-        binding.textViewStatus.setOnClickListener {
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://status.floodwatch.example.com")
-                )
-            )
-        }
-
-        binding.textViewPrivacy.setOnClickListener {
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://floodwatch.example.com/privacy")
-                )
-            )
-        }
     }
 }

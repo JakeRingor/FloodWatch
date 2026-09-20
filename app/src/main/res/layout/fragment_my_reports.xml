@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -7,6 +8,7 @@
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/myReportsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="My Reports"
@@ -16,12 +18,80 @@
         android:layout_marginBottom="4dp" />
 
     <TextView
+        android:id="@+id/myReportsSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Track the status of your flood reports"
         android:textColor="#5A7A99"
         android:textSize="13sp"
         android:layout_marginBottom="14dp" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/myReportsFilters"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterAll"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="All" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterPending"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pending" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterVerified"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Verified" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterDismissed"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dismissed" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterIssues"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Needs attention" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterWithdrawn"
+                style="@style/MyReportsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Withdrawn" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/myReportsRefresh"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Refresh" />
 
     <ProgressBar
         android:id="@+id/myReportsLoading"
@@ -48,5 +118,13 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingTop="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/myReportsLoadMore"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Load more"
+        android:visibility="gone" />
 
 </LinearLayout>

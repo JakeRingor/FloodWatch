@@ -11,6 +11,7 @@
         <item name="android:navigationBarColor">#1A2E4A</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="bottomNavigationStyle">@style/FloodWatchBottomNav</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FloodWatch.MaterialAlertDialog</item>
     </style>
 
     <style name="Theme.FloodWatch" parent="Base.Theme.FloodWatch" />
@@ -37,6 +38,37 @@
     <style name="BottomNavTextStyle" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:paddingTop">0dp</item>
         <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <!-- Explicit colors keep the My Reports filters readable in both themes. -->
+    <style name="MyReportsFilterChip" parent="Widget.MaterialComponents.Chip.Filter">
+        <item name="android:textColor">@color/my_reports_filter_text</item>
+        <item name="chipBackgroundColor">@color/my_reports_filter_background</item>
+        <item name="chipStrokeColor">@color/my_reports_filter_stroke</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="android:minHeight">40dp</item>
+    </style>
+
+    <style name="ThemeOverlay.FloodWatch.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorSurfaceContainer">#FFFFFF</item>
+        <item name="colorSurfaceContainerHigh">#FFFFFF</item>
+        <item name="colorSurfaceContainerHighest">#FFFFFF</item>
+        <item name="colorOnSurface">#0F2040</item>
+        <item name="colorOnSurfaceVariant">#4B647A</item>
+        <item name="colorPrimary">#2563EB</item>
+        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="android:colorAccent">#2563EB</item>
+        <item name="android:textColorPrimary">#0F2040</item>
+        <item name="android:textColorSecondary">#5A7A99</item>
+        <item name="android:backgroundDimAmount">0.45</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay_FloodWatch_Dialog</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay_FloodWatch_Dialog">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
     </style>
 
 </resources>

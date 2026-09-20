@@ -1,7 +1,6 @@
 package com.example.floodwatch
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +23,8 @@ class LoginActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.checkBoxKeepSigned.isChecked =
+            SupabaseClient.isPersistentSessionsEnabled()
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -60,6 +61,9 @@ class LoginActivity : AppCompatActivity() {
 
             binding.buttonLogin.isEnabled = false
             binding.buttonLogin.text = "Signing in…"
+            SupabaseClient.setPersistentSessionsEnabled(
+                binding.checkBoxKeepSigned.isChecked
+            )
 
             lifecycleScope.launch {
                 try {
@@ -114,23 +118,6 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // ── Footer Links ───────────────────────────────────────
-        binding.textViewStatus.setOnClickListener {
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://status.floodwatch.example.com")
-                )
-            )
-        }
-
-        binding.textViewPrivacy.setOnClickListener {
-            startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("https://floodwatch.example.com/privacy")
-                )
-            )
-        }
     }
 
     override fun onStart() {

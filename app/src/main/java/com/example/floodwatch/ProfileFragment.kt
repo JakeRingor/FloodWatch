@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.text.InputType
 import android.view.LayoutInflater
@@ -22,7 +23,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -35,6 +39,7 @@ class ProfileFragment : Fragment() {
     private var currentProfile: UserProfile? = null
     private var submittedCount = 0
     private var verifiedCount = 0
+    private var lastStatisticsLoadAt = 0L
 
     private val profilePhotoPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -69,10 +74,10 @@ class ProfileFragment : Fragment() {
         binding.changePassword.setOnClickListener { confirmPasswordReset() }
         binding.logoutBtn.setOnClickListener { confirmLogout() }
         binding.submittedReportsCard.setOnClickListener {
-            (activity as? HomeActivity)?.openMyReports()
+            (activity as? HomeActivity)?.openMyReports(verifiedOnly = false)
         }
         binding.verifiedReportsCard.setOnClickListener {
-            (activity as? HomeActivity)?.openMyReports()
+            (activity as? HomeActivity)?.openMyReports(verifiedOnly = true)
         }
         binding.emergencyContactRow.setOnClickListener { showEmergencyContactActions() }
         binding.homeZoneRow.setOnClickListener { openHomeZoneInMaps() }
@@ -89,8 +94,7 @@ class ProfileFragment : Fragment() {
     private fun loadProfileAndStatistics() {
         val user = SupabaseClient.client.auth.currentUserOrNull()
         if (user == null) {
-            binding.textViewUserName.text = "FloodWatch User"
-            binding.textViewUserEmail.text = "Session expired"
+            redirectToLoginForExpiredSession()
             return
         }
 
@@ -105,7 +109,7 @@ class ProfileFragment : Fragment() {
         else loadSavedProfilePhoto()
 
         binding.profileLoading.visibility = View.VISIBLE
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 currentProfile = SupabaseClient.client
                     .from("user_profiles")
@@ -114,6 +118,14 @@ class ProfileFragment : Fragment() {
                 currentProfile?.fullName?.takeIf { it.isNotBlank() }?.let {
                     if (_binding != null) binding.textViewUserName.text = it
                 }
+                currentProfile?.address?.takeIf { it.isNotBlank() }?.let {
+                    if (_binding != null) binding.textViewHomeZoneValue.text = it
+                }
+                currentProfile?.profileImageUrl?.takeIf { it.isNotBlank() }?.let {
+                    if (_binding != null) displayProfilePhoto(it)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 showRetryMessage("Unable to refresh profile") { loadProfileAndStatistics() }
             } finally {
@@ -126,21 +138,39 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadReportStatistics() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastStatisticsLoadAt < 1_000L) return
+        lastStatisticsLoadAt = now
         val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
             ?: SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
             ?: return
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val reports = SupabaseClient.client
+                val allReportsResult = SupabaseClient.client
                     .from("flood_reports")
-                    .select { filter { eq("user_id", userId) } }
-                    .decodeList<FloodReport>()
-                submittedCount = reports.size
-                verifiedCount = reports.count { it.status.equals("VERIFIED", ignoreCase = true) }
+                    .select {
+                        head = true
+                        count(Count.EXACT)
+                        filter { eq("user_id", userId) }
+                    }
+                val verifiedReportsResult = SupabaseClient.client
+                    .from("flood_reports")
+                    .select {
+                        head = true
+                        count(Count.EXACT)
+                        filter {
+                            eq("user_id", userId)
+                            ilike("status", "verified")
+                        }
+                    }
+                submittedCount = allReportsResult.countOrNull()?.toInt() ?: 0
+                verifiedCount = verifiedReportsResult.countOrNull()?.toInt() ?: 0
                 if (_binding != null) {
                     binding.textViewReportsSubmittedCount.text = submittedCount.toString()
                     binding.textViewVerifiedCount.text = verifiedCount.toString()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 if (_binding != null) {
                     binding.textViewReportsSubmittedCount.text = "--"
@@ -154,19 +184,9 @@ class ProfileFragment : Fragment() {
     private fun setupNotificationPreferences() {
         val prefs = profilePreferences()
         binding.switchFloodAlerts.isChecked = prefs.getBoolean(PREF_FLOOD_ALERTS, true)
-        binding.switchWaterLevel.isChecked = prefs.getBoolean(PREF_WATER_LEVEL, true)
-        binding.switchCommunityNews.isChecked = prefs.getBoolean(PREF_COMMUNITY_NEWS, false)
 
         binding.switchFloodAlerts.setOnCheckedChangeListener { _, enabled ->
             prefs.edit().putBoolean(PREF_FLOOD_ALERTS, enabled).apply()
-            if (enabled) requestNotificationPermissionIfNeeded()
-        }
-        binding.switchWaterLevel.setOnCheckedChangeListener { _, enabled ->
-            prefs.edit().putBoolean(PREF_WATER_LEVEL, enabled).apply()
-            if (enabled) requestNotificationPermissionIfNeeded()
-        }
-        binding.switchCommunityNews.setOnCheckedChangeListener { _, enabled ->
-            prefs.edit().putBoolean(PREF_COMMUNITY_NEWS, enabled).apply()
             if (enabled) requestNotificationPermissionIfNeeded()
         }
     }
@@ -213,7 +233,7 @@ class ProfileFragment : Fragment() {
                     return@setOnClickListener
                 }
                 dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = false
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val updated = UserProfile(
                             id = user.id,
@@ -226,9 +246,15 @@ class ProfileFragment : Fragment() {
                         SupabaseClient.client.from("user_profiles").upsert(updated)
                         SupabaseClient.client.auth.updateUser { data { put("full_name", name) } }
                         currentProfile = updated
-                        if (_binding != null) binding.textViewUserName.text = name
+                        if (_binding != null) {
+                            binding.textViewUserName.text = name
+                            binding.textViewHomeZoneValue.text =
+                                updated.address ?: getString(R.string.home_zone_address)
+                        }
                         dialog.dismiss()
                         Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show()
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (error: Exception) {
                         dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isEnabled = true
                         Toast.makeText(requireContext(), "Could not update profile: ${error.message}", Toast.LENGTH_LONG).show()
@@ -254,13 +280,15 @@ class ProfileFragment : Fragment() {
 
     private fun sendPasswordReset(email: String) {
         binding.changePassword.isEnabled = false
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 SupabaseClient.client.auth.resetPasswordForEmail(
                     email = email,
                     redirectUrl = "com.example.floodwatch://reset-password"
                 )
                 Toast.makeText(requireContext(), "Reset link sent to $email", Toast.LENGTH_LONG).show()
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Unable to send reset link", Toast.LENGTH_LONG).show()
             } finally {
@@ -324,30 +352,48 @@ class ProfileFragment : Fragment() {
     }
 
     private fun openHomeZoneInMaps() {
-        val label = "Sta. Ana, Taytay, Rizal"
-        val mapIntent = Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse("geo:$HOME_LAT,$HOME_LON?q=${Uri.encode(label)}")
-        )
+        val savedAddress = currentProfile?.address?.trim().orEmpty()
+        val defaultLabel = "${AppLocation.BARANGAY}, ${AppLocation.MUNICIPALITY}, ${AppLocation.PROVINCE}"
+        val mapIntent = if (savedAddress.isNotBlank()) {
+            Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(savedAddress)}"))
+        } else {
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("geo:${AppLocation.LAT},${AppLocation.LNG}?q=${Uri.encode(defaultLabel)}")
+            )
+        }
         if (mapIntent.resolveActivity(requireContext().packageManager) != null) startActivity(mapIntent)
         else startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=$HOME_LAT,$HOME_LON"
+            "https://www.google.com/maps/search/?api=1&query=${Uri.encode(savedAddress.ifBlank { defaultLabel })}"
         )))
     }
 
     private fun confirmLogout() {
-        MaterialAlertDialogBuilder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("Log out?")
             .setMessage("Are you sure you want to log out of FloodWatch?")
             .setNegativeButton("Cancel", null)
-            .setPositiveButton("Log out") { _, _ -> performLogout() }.show()
+            .setPositiveButton("Log out") { _, _ -> performLogout() }
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(android.graphics.Color.parseColor("#D32F2F"))
+        }
+        dialog.show()
     }
 
     private fun performLogout() {
         binding.logoutBtn.isEnabled = false
         binding.logoutBtn.text = "Signing out…"
-        lifecycleScope.launch {
-            try { SupabaseClient.client.auth.signOut() } catch (_: Exception) { }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                SupabaseClient.client.auth.signOut()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // A network failure must not leave a persistent local session behind.
+                runCatching { SupabaseClient.client.auth.clearSession() }
+            }
             if (!isAdded) return@launch
             startActivity(Intent(requireContext(), LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -357,12 +403,25 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    private fun chooseProfilePhoto() = profilePhotoPicker.launch(arrayOf("image/*"))
+    private fun chooseProfilePhoto() = profilePhotoPicker.launch(
+        arrayOf("image/jpeg", "image/png", "image/webp")
+    )
 
     private fun uploadProfilePhoto(uri: Uri) {
         val resolver = requireContext().contentResolver
-        if (!resolver.getType(uri).orEmpty().startsWith("image/")) {
-            Toast.makeText(requireContext(), "Please select an image file", Toast.LENGTH_SHORT).show()
+        val mimeType = resolver.getType(uri).orEmpty().lowercase()
+        val extension = when (mimeType) {
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            else -> null
+        }
+        if (extension == null) {
+            Toast.makeText(
+                requireContext(),
+                "Please select a JPEG, PNG, or WebP image",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
         val fileSize = runCatching {
@@ -375,28 +434,39 @@ class ProfileFragment : Fragment() {
         try {
             resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         } catch (_: SecurityException) { }
-        profilePreferences().edit().putString(PROFILE_PHOTO_URI, uri.toString()).apply()
-        displayProfilePhoto(uri)
-
         val user = SupabaseClient.client.auth.currentUserOrNull()
         if (user == null) {
             Toast.makeText(requireContext(), "Please sign in again", Toast.LENGTH_SHORT).show()
             return
         }
         setPhotoLoading(true)
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
                     ?: throw IllegalStateException("Unable to read selected image")
-                val path = "${user.id}/avatar.jpg"
+                val path = "${user.id}/avatar.$extension"
                 val bucket = SupabaseClient.client.storage.from(PROFILE_BUCKET)
-                bucket.upload(path, bytes) { upsert = true }
+                bucket.upload(path, bytes) {
+                    upsert = true
+                    contentType = ContentType.parse(mimeType)
+                }
                 val avatarUrl = bucket.publicUrl(path) + "?v=${System.currentTimeMillis()}"
                 SupabaseClient.client.auth.updateUser { data { put("avatar_url", avatarUrl) } }
+                SupabaseClient.client.from("user_profiles").update({
+                    set("profile_image_url", avatarUrl)
+                }) {
+                    filter { eq("id", user.id) }
+                }
+                currentProfile = currentProfile?.copy(profileImageUrl = avatarUrl)
+                profilePreferences().edit()
+                    .putString(PROFILE_PHOTO_URI, uri.toString())
+                    .apply()
                 if (_binding != null) {
                     displayProfilePhoto(avatarUrl)
                     Toast.makeText(requireContext(), "Profile photo updated", Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (error: Exception) {
                 if (_binding != null) Toast.makeText(
                     requireContext(), "Upload failed: ${error.message}", Toast.LENGTH_LONG
@@ -439,18 +509,68 @@ class ProfileFragment : Fragment() {
 
     private fun dialogInput(hintText: String) = EditText(requireContext()).apply {
         hint = hintText
+        setTextColor(android.graphics.Color.parseColor("#0F2040"))
+        setHintTextColor(android.graphics.Color.parseColor("#7890A6"))
+        backgroundTintList = android.content.res.ColorStateList.valueOf(
+            android.graphics.Color.parseColor("#2563EB")
+        )
         setSingleLine(true)
         layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         )
     }
 
-    private fun profilePreferences() = requireContext().getSharedPreferences(PROFILE_PREFS, 0)
+    private fun profilePreferences(): android.content.SharedPreferences {
+        val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
+            ?: SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+            ?: "guest"
+        val scopedPreferences = requireContext().getSharedPreferences(
+            "${PROFILE_PREFS}_$userId",
+            0
+        )
+
+        // Move preferences saved by older builds to the account that is currently
+        // signed in. Future accounts receive their own isolated preference file.
+        val legacyPreferences = requireContext().getSharedPreferences(PROFILE_PREFS, 0)
+        if (scopedPreferences.all.isEmpty() && legacyPreferences.all.isNotEmpty()) {
+            scopedPreferences.edit()
+                .putString(
+                    PROFILE_PHOTO_URI,
+                    legacyPreferences.getString(PROFILE_PHOTO_URI, null)
+                )
+                .putBoolean(
+                    PREF_FLOOD_ALERTS,
+                    legacyPreferences.getBoolean(PREF_FLOOD_ALERTS, true)
+                )
+                .putString(
+                    PREF_EMERGENCY_NAME,
+                    legacyPreferences.getString(PREF_EMERGENCY_NAME, DEFAULT_EMERGENCY_NAME)
+                )
+                .putString(
+                    PREF_EMERGENCY_PHONE,
+                    legacyPreferences.getString(PREF_EMERGENCY_PHONE, "")
+                )
+                .apply()
+            legacyPreferences.edit().clear().apply()
+        }
+        return scopedPreferences
+    }
 
     private fun openAppSettings() = startActivity(Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
         Uri.parse("package:${requireContext().packageName}")
     ))
+
+    private fun redirectToLoginForExpiredSession() {
+        if (!isAdded) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { SupabaseClient.client.auth.clearSession() }
+            startActivity(Intent(requireContext(), LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            requireActivity().finish()
+        }
+    }
 
     override fun onDestroyView() {
         _binding = null
@@ -462,13 +582,9 @@ class ProfileFragment : Fragment() {
         private const val PROFILE_PHOTO_URI = "profile_photo_uri"
         private const val PROFILE_BUCKET = "profile-images"
         private const val PREF_FLOOD_ALERTS = "notify_flood_alerts"
-        private const val PREF_WATER_LEVEL = "notify_water_level"
-        private const val PREF_COMMUNITY_NEWS = "notify_community_news"
         private const val PREF_EMERGENCY_NAME = "emergency_contact_name"
         private const val PREF_EMERGENCY_PHONE = "emergency_contact_phone"
-        private const val DEFAULT_EMERGENCY_NAME = "Marlon Gurion (Friend)"
+        private const val DEFAULT_EMERGENCY_NAME = "Family or Friends"
         private const val MAX_PROFILE_PHOTO_BYTES = 5L * 1024L * 1024L
-        private const val HOME_LAT = 14.5374
-        private const val HOME_LON = 121.1099
     }
 }

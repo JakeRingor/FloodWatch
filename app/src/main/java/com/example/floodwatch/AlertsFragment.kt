@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
@@ -48,7 +49,7 @@ class AlertsFragment : Fragment() {
 
     // ── FLOOD ALERTS (admin-posted) ──────────────────────────────
     private fun loadFloodAlerts() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val alerts = SupabaseClient.client
                     .from("flood_alerts")
@@ -139,7 +140,7 @@ class AlertsFragment : Fragment() {
 
     // ── VERIFIED REPORTS (user-submitted, admin-verified) ────────
     private fun loadVerifiedReports() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val reports = SupabaseClient.client
                     .from("flood_reports")
@@ -147,6 +148,8 @@ class AlertsFragment : Fragment() {
                         filter {
                             eq("status", "VERIFIED")
                         }
+                        // Show the newest submitted verified report first.
+                        order("created_at", Order.DESCENDING)
                     }
                     .decodeList<FloodReport>()
 

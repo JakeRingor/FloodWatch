@@ -40,8 +40,8 @@
                     <ImageView
                         android:layout_width="34dp"
                         android:layout_height="34dp"
-                        app:srcCompat="@drawable/ic_droplet"
-                        app:tint="#2563EB"
+                        app:srcCompat="@drawable/fragment_home_logo"
+                        android:scaleType="fitCenter"
                         android:layout_marginEnd="8dp"
                         android:contentDescription="logo" />
 
@@ -75,7 +75,7 @@
                 android:id="@+id/textViewStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Current Status • Sta. Ana, Taytay"
+                android:text="Loading service area..."
                 android:textColor="#5A7A99"
                 android:textSize="12sp"
                 android:layout_marginBottom="6dp" />
@@ -465,7 +465,7 @@
                                 android:id="@+id/textViewRiskLevel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Moderate Threat"
+                                android:text="Loading risk..."
                                 android:textColor="#0F2040"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -478,9 +478,10 @@
                         android:layout_marginBottom="8dp">
 
                         <TextView
+                            android:id="@+id/textViewRiskArea"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Ivan Street"
+                            android:text="--"
                             android:textColor="#1E3A5F"
                             android:textSize="13sp"
                             android:layout_alignParentStart="true"
@@ -490,7 +491,7 @@
                             android:id="@+id/textViewStreetStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Stable"
+                            android:text="--"
                             android:textColor="#22C55E"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -503,7 +504,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
                         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                        android:progress="40"
+                        android:progress="0"
                         android:progressTint="#2563EB"
                         android:progressBackgroundTint="#E2E8F0"
                         android:layout_marginBottom="6dp" />
@@ -564,7 +565,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="RAINFALL&#10;(24H)"
+                                android:text="RAINFALL&#10;(1H)"
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"

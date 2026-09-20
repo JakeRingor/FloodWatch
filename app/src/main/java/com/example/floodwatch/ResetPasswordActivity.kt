@@ -12,6 +12,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.ActivityResetPasswordBinding
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.parseSessionFromUrl
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -26,131 +28,145 @@ class ResetPasswordActivity : AppCompatActivity() {
         binding = ActivityResetPasswordBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        // Handle the deep link
         val uri = intent?.data
-        Log.d("ResetPassword", "Deep link URI: $uri")
+        Log.d(TAG, "Deep link received: ${uri?.scheme}://${uri?.host}")
 
         if (uri == null) {
-            Toast.makeText(this, "Invalid reset link.", Toast.LENGTH_LONG).show()
-            finish()
+            showInvalidLinkAndClose()
             return
         }
 
-        // Extract token from URI fragment (#access_token=...&type=recovery)
-        val fragment = uri.fragment ?: ""
-        val params = fragment.split("&").associate {
-            val parts = it.split("=")
-            parts[0] to (parts.getOrElse(1) { "" })
-        }
-
-        val accessToken = params["access_token"]
-        val type = params["type"]
-
-        Log.d("ResetPassword", "Type: $type, Token: $accessToken")
-
-        if (type != "recovery" || accessToken.isNullOrBlank()) {
-            Toast.makeText(this, "Invalid or expired reset link.", Toast.LENGTH_LONG).show()
-            finish()
-            return
-        }
-
-        // Set the session using the token
+        // Import the complete recovery session. The URL includes a refresh token,
+        // expiry, token type, and recovery type in addition to the access token.
         lifecycleScope.launch {
             try {
-                SupabaseClient.client.auth.importAuthToken(accessToken)
+                val auth = SupabaseClient.client.auth
+                val session = auth.parseSessionFromUrl(uri.toString())
 
-                // ── Save email so we can pre-fill Login later ──────────
-                userEmail = SupabaseClient.client.auth.currentUserOrNull()?.email ?: ""
+                if (session.type != "recovery") {
+                    throw IllegalArgumentException("The link is not a recovery link")
+                }
 
-                // Token is valid — show the password form
+                // This session is short-lived and is needed only for updateUser.
+                auth.stopAutoRefreshForCurrentSession()
+                auth.importSession(session, autoRefresh = false)
+
+                // Verify the token before allowing the password to be submitted.
+                userEmail = auth.retrieveUserForCurrentSession().email.orEmpty()
+
                 binding.layoutLoading.visibility = View.GONE
                 binding.layoutForm.visibility = View.VISIBLE
-
+            } catch (e: CancellationException) {
+                // Normal when the Activity is destroyed; do not display this as an error.
+                throw e
             } catch (e: Exception) {
-                Log.e("ResetPassword", "Token error: ${e.message}", e)
-                Toast.makeText(
-                    this@ResetPasswordActivity,
-                    "Reset link expired. Please request a new one.",
-                    Toast.LENGTH_LONG
-                ).show()
-                finish()
+                Log.e(TAG, "Recovery session error", e)
+                showInvalidLinkAndClose()
             }
         }
 
-        // Submit new password
         binding.buttonUpdatePassword.setOnClickListener {
-            val newPass = binding.editTextNewPassword.text.toString().trim()
-            val confirmPass = binding.editTextConfirmPassword.text.toString().trim()
-
-            if (newPass.isEmpty() || confirmPass.isEmpty()) {
-                Toast.makeText(this, "Please fill in both fields.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val passwordRegex = Regex("^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%^&*]).{12,}\$")
-            if (!passwordRegex.matches(newPass)) {
-                Toast.makeText(
-                    this,
-                    "Password must be at least 12 characters with uppercase, number, and special character (!@#\$%^&*).",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
-            }
-            if (newPass != confirmPass) {
-                Toast.makeText(this, "Passwords do not match.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            binding.buttonUpdatePassword.isEnabled = false
-            binding.buttonUpdatePassword.text = "Updating…"
-
-            lifecycleScope.launch {
-                try {
-                    // ── 1. Update the password ─────────────────────────
-                    SupabaseClient.client.auth.updateUser {
-                        password = newPass
-                    }
-
-                    // ── 2. Sign out the recovery session ──────────────
-                    try {
-                        SupabaseClient.client.auth.signOut()
-                    } catch (e: Exception) {
-                        Log.w("ResetPassword", "Sign out warning: ${e.message}")
-                    }
-
-                    // ── 3. Show success card ───────────────────────────
-                    binding.layoutForm.visibility = View.GONE
-                    binding.layoutSuccess.visibility = View.VISIBLE
-
-                    // ── 4. Auto-redirect to Login after 2 seconds ─────
-                    delay(2000)
-                    goToLogin()
-
-                } catch (e: Exception) {
-                    Log.e("ResetPassword", "Update error: ${e.message}", e)
-                    binding.buttonUpdatePassword.isEnabled = true
-                    binding.buttonUpdatePassword.text = "Update Password"
-                    Toast.makeText(
-                        this@ResetPasswordActivity,
-                        "Failed to update password: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+            updatePassword()
         }
 
-        // Manual "Back to Login" tap (if user doesn't wait for auto-redirect)
         binding.buttonGoToLogin.setOnClickListener {
             goToLogin()
         }
     }
 
-    // ── Navigate to LoginActivity with email pre-filled ───────────────
+    private fun updatePassword() {
+        val newPassword = binding.editTextNewPassword.text.toString()
+        val confirmedPassword = binding.editTextConfirmPassword.text.toString()
+
+        if (newPassword.isBlank() || confirmedPassword.isBlank()) {
+            Toast.makeText(this, "Please fill in both fields.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!PasswordRules.isValid(newPassword)) {
+            Toast.makeText(
+                this,
+                PasswordRules.ERROR_MESSAGE,
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        if (newPassword != confirmedPassword) {
+            Toast.makeText(this, "Passwords do not match.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        setUpdating(true)
+
+        lifecycleScope.launch {
+            try {
+                val auth = SupabaseClient.client.auth
+
+                // Uses the verified recovery session imported above.
+                auth.updateUser {
+                    password = newPassword
+                }
+
+                // The update already succeeded. A network signOut here can cancel
+                // an auth job and incorrectly turn success into "Job was cancelled".
+                runCatching { auth.clearSession() }
+                    .onFailure { Log.w(TAG, "Could not clear local recovery session", it) }
+
+                binding.layoutForm.visibility = View.GONE
+                binding.layoutSuccess.visibility = View.VISIBLE
+
+                delay(2000)
+                goToLogin()
+            } catch (e: CancellationException) {
+                // lifecycleScope cancellation is not an update failure.
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Password update error", e)
+                setUpdating(false)
+                Toast.makeText(
+                    this@ResetPasswordActivity,
+                    readableUpdateError(e),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun setUpdating(updating: Boolean) {
+        binding.buttonUpdatePassword.isEnabled = !updating
+        binding.buttonUpdatePassword.text = if (updating) "Updating..." else "Update Password"
+    }
+
+    private fun readableUpdateError(error: Exception): String {
+        val message = error.message.orEmpty()
+        return when {
+            message.contains("expired", ignoreCase = true) ||
+                message.contains("jwt", ignoreCase = true) ||
+                message.contains("session", ignoreCase = true) ->
+                "The reset link has expired. Please request a new one."
+            message.contains("weak", ignoreCase = true) ||
+                message.contains("password", ignoreCase = true) ->
+                "That password is not accepted. Please choose a stronger password."
+            else -> "Failed to update password. Please check your connection and try again."
+        }
+    }
+
+    private fun showInvalidLinkAndClose() {
+        Toast.makeText(
+            this,
+            "The reset link is invalid or expired. Please request a new one.",
+            Toast.LENGTH_LONG
+        ).show()
+        finish()
+    }
+
     private fun goToLogin() {
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
@@ -160,5 +176,9 @@ class ResetPasswordActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private companion object {
+        const val TAG = "ResetPassword"
     }
 }

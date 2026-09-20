@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">FloodWatch</string>
-    <string name="google_maps_key">AIzaSyDOuzCVhnrFD3UhBjdJcbebi76hamwcMmw</string>
     <string name="last_updated">Last updated: %1$s</string>
 
     <string name="profile">Profile</string>
@@ -14,9 +13,7 @@
     <string name="home_zone">Home Zone</string>
     <string name="home_zone_address">Sta. Ana, Taytay, Rizal</string>
     <string name="notification_preferences">Notification Preferences</string>
-    <string name="flood_alerts">Flood Alerts</string>
-    <string name="water_level_changes">Water Level Changes</string>
-    <string name="community_news">Community News</string>
+    <string name="flood_alerts">Report Status Alerts</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="change_password">Change Password</string>
     <string name="log_out">Log Out</string>

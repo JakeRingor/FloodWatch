@@ -11,6 +11,8 @@
         <item name="android:navigationBarColor">#1A2E4A</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="bottomNavigationStyle">@style/FloodWatchBottomNav</item>
+        <!-- Keep app dialogs light and readable even when the phone uses dark mode. -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FloodWatch.MaterialAlertDialog</item>
     </style>
 
     <style name="Theme.FloodWatch" parent="Base.Theme.FloodWatch" />
