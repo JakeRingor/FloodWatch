@@ -4,12 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.ActivityLoginBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
@@ -34,7 +34,10 @@ class LoginActivity : AppCompatActivity() {
 
         // ── Handle email verification deep link ────────────────
         if (intent?.data?.host == "verify-email") {
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(
+                this,
+                R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+            )
                 .setTitle("Email Verified!")
                 .setMessage("Your email has been verified. You can now log in to your FloodWatch account.")
                 .setPositiveButton("OK", null)
@@ -78,7 +81,10 @@ class LoginActivity : AppCompatActivity() {
                         SupabaseClient.client.auth.signOut()
                         binding.buttonLogin.isEnabled = true
                         binding.buttonLogin.text = "Login to Dashboard"
-                        AlertDialog.Builder(this@LoginActivity)
+                        MaterialAlertDialogBuilder(
+                            this@LoginActivity,
+                            R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+                        )
                             .setTitle("Email Not Verified")
                             .setMessage("Please check your inbox and click the verification link before logging in.")
                             .setPositiveButton("OK", null)

@@ -76,7 +76,7 @@
                     android:id="@+id/textViewUserName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/user_name"
+                    android:text="@string/profile_name_placeholder"
                     android:textColor="@color/black"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -86,7 +86,7 @@
                     android:id="@+id/textViewUserEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/user_email"
+                    android:text="@string/profile_email_placeholder"
                     android:textSize="14sp"
                     android:textColor="#777"/>
 
@@ -135,13 +135,12 @@
                         android:id="@+id/textViewReportsSubmittedCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/stats_count_3"
+                        android:text="@string/profile_stat_placeholder"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="#2563EB"/>
 
                     <TextView
-                        android:id="@+id/textViewHomeZoneValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/reports_submitted"
@@ -176,7 +175,7 @@
                         android:id="@+id/textViewVerifiedCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/stats_count_2"
+                        android:text="@string/profile_stat_placeholder"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="#2563EB"/>
@@ -302,9 +301,10 @@
                         android:textStyle="bold"/>
 
                     <TextView
+                        android:id="@+id/textViewHomeZoneValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/home_zone_address"
+                        android:text="@string/home_zone_not_set"
                         android:textSize="12sp"
                         android:textColor="#9CA3AF"/>
                 </LinearLayout>

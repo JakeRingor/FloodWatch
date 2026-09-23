@@ -3,15 +3,16 @@
     <string name="last_updated">Last updated: %1$s</string>
 
     <string name="profile">Profile</string>
-    <string name="user_name">Julius Raffy</string>
-    <string name="user_email">Julius Raffy@kingsville.gov</string>
+    <string name="profile_name_placeholder">FloodWatch User</string>
+    <string name="profile_email_placeholder">Loading email…</string>
+    <string name="profile_stat_placeholder">—</string>
     <string name="reports_submitted">REPORTS SUBMITTED</string>
     <string name="verified_submissions">VERIFIED SUBMISSIONS</string>
     <string name="emergency_settings">Emergency Settings</string>
     <string name="emergency_contact">Emergency Contact</string>
     <string name="emergency_contact_name">Family or Friends</string>
     <string name="home_zone">Home Zone</string>
-    <string name="home_zone_address">Sta. Ana, Taytay, Rizal</string>
+    <string name="home_zone_not_set">Not set</string>
     <string name="notification_preferences">Notification Preferences</string>
     <string name="flood_alerts">Report Status Alerts</string>
     <string name="edit_profile">Edit Profile</string>
@@ -20,8 +21,6 @@
     <string name="profile_image_desc">Profile Image</string>
     <string name="edit_icon_desc">Edit Icon</string>
     <string name="back_button_desc">Back Button</string>
-    <string name="stats_count_3">3</string>
-    <string name="stats_count_2">2</string>
 
     <string name="detecting">Detecting…</string>
     <string name="re_detect_location">Re-detect Location</string>

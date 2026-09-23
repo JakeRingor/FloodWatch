@@ -11,12 +11,12 @@ import android.util.Patterns
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.ActivitySignupBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
@@ -109,7 +109,10 @@ class SignupActivity : AppCompatActivity() {
                     }
 
                     // ── Show Verification Dialog ───────────────────
-                    AlertDialog.Builder(this@SignupActivity)
+                    MaterialAlertDialogBuilder(
+                        this@SignupActivity,
+                        R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+                    )
                         .setTitle("Verify Your Email")
                         .setMessage("A verification link has been sent to $email.\n\nPlease check your inbox and click the link before logging in.")
                         .setPositiveButton("Go to Login") { _, _ ->

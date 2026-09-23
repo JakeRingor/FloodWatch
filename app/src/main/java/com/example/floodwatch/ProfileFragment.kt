@@ -98,10 +98,11 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        binding.textViewUserEmail.text = user.email
+        binding.textViewUserEmail.text = user.email.orEmpty()
         binding.textViewUserName.text = user.userMetadata
             ?.get("full_name")?.jsonPrimitive?.contentOrNull
-            ?.takeIf { it.isNotBlank() } ?: "FloodWatch User"
+            ?.takeIf { it.isNotBlank() } ?: getString(R.string.profile_name_placeholder)
+        binding.textViewHomeZoneValue.setText(R.string.home_zone_not_set)
 
         val remoteAvatar = user.userMetadata
             ?.get("avatar_url")?.jsonPrimitive?.contentOrNull
@@ -118,9 +119,9 @@ class ProfileFragment : Fragment() {
                 currentProfile?.fullName?.takeIf { it.isNotBlank() }?.let {
                     if (_binding != null) binding.textViewUserName.text = it
                 }
-                currentProfile?.address?.takeIf { it.isNotBlank() }?.let {
-                    if (_binding != null) binding.textViewHomeZoneValue.text = it
-                }
+                if (_binding != null) binding.textViewHomeZoneValue.text =
+                    currentProfile?.address?.takeIf { it.isNotBlank() }
+                        ?: getString(R.string.home_zone_not_set)
                 currentProfile?.profileImageUrl?.takeIf { it.isNotBlank() }?.let {
                     if (_binding != null) displayProfilePhoto(it)
                 }
@@ -249,7 +250,7 @@ class ProfileFragment : Fragment() {
                         if (_binding != null) {
                             binding.textViewUserName.text = name
                             binding.textViewHomeZoneValue.text =
-                                updated.address ?: getString(R.string.home_zone_address)
+                                updated.address ?: getString(R.string.home_zone_not_set)
                         }
                         dialog.dismiss()
                         Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show()
