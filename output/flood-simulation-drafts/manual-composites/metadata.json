@@ -1,0 +1,38 @@
+[
+  {
+    "file": "synthetic-assumed-1ft.png",
+    "synthetic": true,
+    "assumed_feet": 1,
+    "verified_depth": false,
+    "post_waterline_y": 551,
+    "boundary_convention": "upper edge of corresponding color band; unverified",
+    "size": [
+      1086,
+      1448
+    ]
+  },
+  {
+    "file": "synthetic-assumed-2ft.png",
+    "synthetic": true,
+    "assumed_feet": 2,
+    "verified_depth": false,
+    "post_waterline_y": 518,
+    "boundary_convention": "upper edge of corresponding color band; unverified",
+    "size": [
+      1086,
+      1448
+    ]
+  },
+  {
+    "file": "synthetic-assumed-3ft.png",
+    "synthetic": true,
+    "assumed_feet": 3,
+    "verified_depth": false,
+    "post_waterline_y": 484,
+    "boundary_convention": "upper edge of corresponding color band; unverified",
+    "size": [
+      1086,
+      1448
+    ]
+  }
+]
