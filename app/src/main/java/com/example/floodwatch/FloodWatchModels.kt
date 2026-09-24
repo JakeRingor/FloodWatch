@@ -66,6 +66,18 @@ data class FloodReport(
     val description: String? = null,
     val severity: Int? = null,
 
+    @SerialName("wheel_count")
+    val wheelCount: Int? = null,
+
+    @SerialName("wheel_confidence")
+    val wheelConfidence: Double? = null,
+
+    @SerialName("wheel_submerged_percent")
+    val wheelSubmergedPercent: Double? = null,
+
+    @SerialName("wheel_estimated_depth_cm")
+    val wheelEstimatedDepthCm: Double? = null,
+
     val status: String = "pending",
 
     @SerialName("created_at")

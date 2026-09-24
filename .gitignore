@@ -50,3 +50,5 @@ signup_hint_test.png
 /docs/guide/ch4-s1.md
 /docs/guide/ch5-s0.md
 /docs/guide/ch5-s1.md
+# Local handoff folder for large ML files; the app uses its verified copy in assets.
+/incoming-models/

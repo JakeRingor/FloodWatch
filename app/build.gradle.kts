@@ -53,6 +53,11 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    androidResources {
+        // The wheel detector is already a binary model. Avoid wasting build
+        // time and memory trying to compress the 122 MB ONNX asset.
+        noCompress += "onnx"
+    }
 }
 
 

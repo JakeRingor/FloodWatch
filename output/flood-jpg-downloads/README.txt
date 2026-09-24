@@ -1,0 +1,1 @@
+AI-generated visual simulations, not verified depth labels. Filenames record requested levels; waterlines and markings can differ from those targets. B.A. Cruz and Tudela each have 1-4 ft drafts; their 5-6 ft runs were interrupted. Carnation has 1-6 ft drafts. These are Google Maps-derived images; conversion does not change source reuse restrictions.

@@ -8,10 +8,36 @@ const ADMIN_EMAIL = 'floodwatchstaana@gmail.com';
 
 let currentTab = 'PENDING';
 let selectedSeverity = 'ADVISORY';
-let allReports = { PENDING: [], VERIFIED: [], DISMISSED: [], INVALID_IMAGE: [], INVALID_INFORMATION: [], WITHDRAWN: [] };
+let allReports = { PENDING: [], VERIFIED: [], DISMISSED: [], INVALID_IMAGE: [], INVALID_INFORMATION: [], WITHDRAWN: [], ARCHIVE: [], TRASH: [] };
 let reportsRealtimeChannel = null;
 let alertsRealtimeChannel = null;
 let realtimeRefreshTimer = null;
+
+// Theme preference is shared by the login and dashboard toggles.
+const THEME_STORAGE_KEY = 'floodwatch-admin-theme';
+
+function getActiveTheme() {
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
+function syncThemeControls() {
+  const isDark = getActiveTheme() === 'dark';
+  const nextThemeLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+
+  document.querySelectorAll('.theme-toggle').forEach(button => {
+    button.setAttribute('aria-label', nextThemeLabel);
+    button.title = nextThemeLabel;
+    const label = button.querySelector('.theme-label');
+    if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+  });
+}
+
+function toggleTheme() {
+  const nextTheme = getActiveTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = nextTheme;
+  try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch (_) { /* storage may be unavailable */ }
+  syncThemeControls();
+}
 
 // ── VERIFY MODAL ──────────────────────────────────────────────
 let pendingVerifyId = null;
@@ -119,12 +145,15 @@ async function loadAllReports() {
 
   if (error) { showToast('Error loading reports', 'error'); return; }
 
-  allReports.PENDING             = data.filter(r => normalizeStatus(r.status) === 'PENDING');
-  allReports.VERIFIED            = data.filter(r => normalizeStatus(r.status) === 'VERIFIED');
-  allReports.DISMISSED           = data.filter(r => normalizeStatus(r.status) === 'DISMISSED');
-  allReports.INVALID_IMAGE       = data.filter(r => normalizeStatus(r.status) === 'INVALID_IMAGE');
-  allReports.INVALID_INFORMATION = data.filter(r => normalizeStatus(r.status) === 'INVALID_INFORMATION');
-  allReports.WITHDRAWN            = data.filter(r => normalizeStatus(r.status) === 'WITHDRAWN');
+  const activeReports = data.filter(r => !r.deleted_at && !r.archived_at);
+  allReports.PENDING             = activeReports.filter(r => normalizeStatus(r.status) === 'PENDING');
+  allReports.VERIFIED            = activeReports.filter(r => normalizeStatus(r.status) === 'VERIFIED');
+  allReports.DISMISSED           = activeReports.filter(r => normalizeStatus(r.status) === 'DISMISSED');
+  allReports.INVALID_IMAGE       = activeReports.filter(r => normalizeStatus(r.status) === 'INVALID_IMAGE');
+  allReports.INVALID_INFORMATION = activeReports.filter(r => normalizeStatus(r.status) === 'INVALID_INFORMATION');
+  allReports.WITHDRAWN           = activeReports.filter(r => normalizeStatus(r.status) === 'WITHDRAWN');
+  allReports.ARCHIVE             = data.filter(r => !r.deleted_at && Boolean(r.archived_at));
+  allReports.TRASH               = data.filter(r => Boolean(r.deleted_at));
 
   const historyCount = allReports.DISMISSED.length + allReports.INVALID_IMAGE.length +
     allReports.INVALID_INFORMATION.length + allReports.WITHDRAWN.length;
@@ -135,6 +164,8 @@ async function loadAllReports() {
   document.getElementById('tabCountPending').textContent  = allReports.PENDING.length;
   document.getElementById('tabCountVerified').textContent = allReports.VERIFIED.length;
   document.getElementById('tabCountHistory').textContent  = historyCount;
+  document.getElementById('tabCountArchive').textContent  = allReports.ARCHIVE.length;
+  document.getElementById('tabCountTrash').textContent    = allReports.TRASH.length;
 
   renderReports(currentTab);
 }
@@ -151,12 +182,18 @@ function renderReports(tab) {
       ...(allReports.WITHDRAWN || [])
     ]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (tab === 'ARCHIVE') {
+    reports = [...(allReports.ARCHIVE || [])]
+      .sort((a, b) => new Date(b.archived_at) - new Date(a.archived_at));
+  } else if (tab === 'TRASH') {
+    reports = [...(allReports.TRASH || [])]
+      .sort((a, b) => new Date(b.deleted_at) - new Date(a.deleted_at));
   } else {
     reports = allReports[tab] || [];
   }
 
   if (!reports.length) {
-    const labels = { PENDING: 'pending', VERIFIED: 'verified', HISTORY: 'history' };
+    const labels = { PENDING: 'pending', VERIFIED: 'verified', HISTORY: 'history', ARCHIVE: 'archived', TRASH: 'trashed' };
     list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No ${labels[tab] || tab.toLowerCase()} reports</p></div>`;
     return;
   }
@@ -187,10 +224,10 @@ function renderReports(tab) {
   <div class="report-card">
     <div class="report-card-header">
       <div class="report-meta">
-        <span class="badge ${statusBadgeClass(normalizeStatus(r.status))}">${escapeHtml(statusLabel(normalizeStatus(r.status)))}</span>
+        <span class="badge ${tab === 'TRASH' ? 'badge-trash' : tab === 'ARCHIVE' ? 'badge-archive' : statusBadgeClass(normalizeStatus(r.status))}">${escapeHtml(tab === 'TRASH' ? `Trashed · ${statusLabel(normalizeStatus(r.status))}` : tab === 'ARCHIVE' ? `Archived · ${statusLabel(normalizeStatus(r.status))}` : statusLabel(normalizeStatus(r.status)))}</span>
         ${severity ? `<span class="severity-dot sev-${severity}"></span>` : ''}
       </div>
-      <span class="report-date">${formatDate(r.created_at)}</span>
+      <span class="report-date">${formatDate(tab === 'TRASH' ? r.deleted_at : tab === 'ARCHIVE' ? r.archived_at : r.created_at)}</span>
     </div>
     <div class="report-content">
       ${safeImageUrl ? `
@@ -204,6 +241,16 @@ function renderReports(tab) {
       <div class="report-info">
         <div class="report-flood-level">💧 ${escapeHtml(r.flood_level || 'Unknown Level')}</div>
         <div class="report-address">📍 ${escapeHtml(r.address || 'No address provided')}</div>
+        ${r.wheel_estimated_depth_cm != null ? `
+          <div class="wheel-analysis-info">
+            <strong>🛞 Wheel Analysis</strong>
+            <span>Estimated depth: ${escapeHtml(Number(r.wheel_estimated_depth_cm).toFixed(1))} cm</span>
+            ${r.wheel_submerged_percent != null ? `<span>Submerged: ${escapeHtml(Number(r.wheel_submerged_percent).toFixed(1))}%</span>` : ''}
+            ${r.wheel_count != null ? `<span>Wheels found: ${escapeHtml(String(r.wheel_count))}</span>` : ''}
+            ${r.wheel_confidence != null ? `<span>Confidence: ${escapeHtml((Number(r.wheel_confidence) * 100).toFixed(1))}%</span>` : ''}
+            <small>Experimental estimate; verify actual conditions.</small>
+          </div>
+        ` : ''}
         ${r.description ? `<div class="report-description">${escapeHtml(r.description)}</div>` : ''}
       </div>
     </div>
@@ -214,11 +261,23 @@ function renderReports(tab) {
     ${tab === 'VERIFIED' ? `
       <div class="report-actions">
         <button class="btn-verify" onclick="updateReport(decodeURIComponent('${safeId}'), 'PENDING')">↩️ Unverify</button>
+        <button class="btn-archive" onclick="archiveReport(decodeURIComponent('${safeId}'))">📦 Archive</button>
       </div>` : ''}
-    ${tab === 'HISTORY' && normalizeStatus(r.status) !== 'WITHDRAWN' ? `
+    ${tab === 'HISTORY' ? `
       <div class="report-actions">
-        <button class="btn-verify" onclick="updateReport(decodeURIComponent('${safeId}'), 'PENDING')">↩️ Restore</button>
-        <button class="btn-dismiss" onclick="deleteReport(decodeURIComponent('${safeId}'))">🗑️ Delete</button>
+        ${normalizeStatus(r.status) !== 'WITHDRAWN' ? `<button class="btn-verify" onclick="updateReport(decodeURIComponent('${safeId}'), 'PENDING')">↩️ Restore</button>` : ''}
+        <button class="btn-archive" onclick="archiveReport(decodeURIComponent('${safeId}'))">📦 Archive</button>
+        ${normalizeStatus(r.status) !== 'WITHDRAWN' ? `<button class="btn-dismiss" onclick="moveReportToTrash(decodeURIComponent('${safeId}'))">🗑️ Trash</button>` : ''}
+      </div>` : ''}
+    ${tab === 'ARCHIVE' ? `
+      <div class="report-actions">
+        <button class="btn-verify" onclick="unarchiveReport(decodeURIComponent('${safeId}'))">↩️ Unarchive</button>
+        <button class="btn-dismiss" onclick="moveReportToTrash(decodeURIComponent('${safeId}'))">🗑️ Move to Trash</button>
+      </div>` : ''}
+    ${tab === 'TRASH' ? `
+      <div class="report-actions">
+        <button class="btn-verify" onclick="restoreTrashedReport(decodeURIComponent('${safeId}'))">↩️ Restore Report</button>
+        <button class="btn-dismiss" onclick="permanentlyDeleteReport(decodeURIComponent('${safeId}'))">🗑️ Delete Permanently</button>
       </div>` : ''}
   </div>`;
   }).join('');
@@ -239,11 +298,49 @@ function switchTab(status, el) {
   renderReports(status);
 }
 
-async function deleteReport(id) {
-  if (!confirm('Delete this report permanently?')) return;
-  const { error } = await sb.from('flood_reports').delete().eq('id', id);
+async function moveReportToTrash(id) {
+  if (!confirm('Move this report to Trash? Its image will be kept and the report can be restored later.')) return;
+  const { data, error } = await sb.rpc('soft_delete_report', { p_report_id: id });
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  showToast('🗑️ Report deleted!', 'success');
+  if (!data) { showToast('Report was already moved or could not be found.', 'error'); return; }
+  showToast('🗑️ Report moved to Trash. Image kept.', 'success');
+  loadAllReports();
+}
+
+async function restoreTrashedReport(id) {
+  const { data, error } = await sb.rpc('restore_trashed_report', { p_report_id: id });
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (!data) { showToast('Report is not in Trash or could not be found.', 'error'); return; }
+  showToast('↩️ Report and image restored!', 'success');
+  loadAllReports();
+}
+
+async function archiveReport(id) {
+  const { data, error } = await sb.rpc('archive_report', { p_report_id: id });
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (!data) { showToast('Report was already archived or could not be found.', 'error'); return; }
+  showToast('📦 Report archived. Image kept.', 'success');
+  loadAllReports();
+}
+
+async function unarchiveReport(id) {
+  const { data, error } = await sb.rpc('unarchive_report', { p_report_id: id });
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (!data) { showToast('Report is not archived or could not be found.', 'error'); return; }
+  showToast('↩️ Report returned from Archive.', 'success');
+  loadAllReports();
+}
+
+async function permanentlyDeleteReport(id) {
+  const confirmed = confirm(
+    'Permanently delete this report record? This cannot be undone. Only reports already in Trash can be permanently deleted.'
+  );
+  if (!confirmed) return;
+
+  const { data, error } = await sb.rpc('permanently_delete_trashed_report', { p_report_id: id });
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (!data) { showToast('Move the report to Trash before deleting it permanently.', 'error'); return; }
+  showToast('🗑️ Report permanently deleted.', 'success');
   loadAllReports();
 }
 
@@ -420,6 +517,8 @@ sb.auth.getSession().then(({ data }) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  syncThemeControls();
+
   document.getElementById('adminPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') adminLogin();
   });

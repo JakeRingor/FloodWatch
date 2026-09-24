@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FloodWatch Admin</title>
   <link rel="icon" type="image/jpeg" href="assets/floodwatch-logo.jpg" />
+  <script>
+    // Apply the saved theme before the stylesheet paints to avoid a light flash.
+    (() => {
+      try {
+        const savedTheme = localStorage.getItem('floodwatch-admin-theme');
+        const theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
@@ -13,6 +25,10 @@
 
 <!-- LOGIN -->
 <div id="loginScreen">
+  <button class="theme-toggle login-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch to dark mode" title="Switch to dark mode">
+    <span class="theme-icon" aria-hidden="true"></span>
+    <span class="theme-label">Dark mode</span>
+  </button>
   <div class="login-card">
     <div class="login-logo">
       <img class="brand-logo" src="assets/floodwatch-logo.jpg" alt="FloodWatch logo" />
@@ -40,6 +56,10 @@
     </div>
     <div class="nav-right">
       <span class="nav-admin" id="adminEmailDisplay"></span>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch to dark mode" title="Switch to dark mode">
+        <span class="theme-icon" aria-hidden="true"></span>
+        <span class="theme-label">Dark mode</span>
+      </button>
       <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
   </nav>
@@ -84,6 +104,8 @@
           <button class="tab active" onclick="switchTab('PENDING', this)">Pending <span class="count" id="tabCountPending">0</span></button>
           <button class="tab" onclick="switchTab('VERIFIED', this)">Verified <span class="count" id="tabCountVerified">0</span></button>
           <button class="tab" onclick="switchTab('HISTORY', this)">History <span class="count" id="tabCountHistory">0</span></button>
+          <button class="tab" onclick="switchTab('ARCHIVE', this)">Archive <span class="count" id="tabCountArchive">0</span></button>
+          <button class="tab" onclick="switchTab('TRASH', this)">Trash <span class="count" id="tabCountTrash">0</span></button>
         </div>
       </div>
       <div class="reports-list" id="reportsList">

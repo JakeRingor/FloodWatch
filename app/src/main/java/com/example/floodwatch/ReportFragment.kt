@@ -1,14 +1,16 @@
 package com.example.floodwatch
 
 import android.Manifest
-import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ImageDecoder
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.location.Geocoder
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +38,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.PostgresAction
@@ -68,6 +71,10 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     private var wheelJob: Job? = null
     private var wheelPreview: Bitmap? = null
     private var wheelText = ""
+    private var wheelCount: Int? = null
+    private var wheelConfidence: Float? = null
+    private var wheelSubmergedFraction: Float? = null
+    private var wheelEstimatedDepthCm: Float? = null
 
     private lateinit var textViewAddress: TextView
     private lateinit var radioGroupFloodLevel: RadioGroup
@@ -131,6 +138,26 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
             }
         }
 
+    private val imagePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri == null) return@registerForActivityResult
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                val bitmap = withContext(Dispatchers.IO) {
+                    runCatching { decodeSelectedImage(uri) }.getOrNull()
+                }
+                if (bitmap != null) {
+                    showCapturedPhoto(bitmap)
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Could not load selected image",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -177,6 +204,11 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 detectLocationBeforeCamera()
             }
 
+        view.findViewById<MaterialButton>(R.id.buttonUploadImage)
+            .setOnClickListener {
+                imagePickerLauncher.launch("image/*")
+            }
+
         view.findViewById<MaterialButton>(R.id.buttonSubmit)
             .setOnClickListener {
                 showReportDetailsDialog()
@@ -187,6 +219,43 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         }
 
         return view
+    }
+
+    private fun decodeSelectedImage(uri: Uri): Bitmap {
+        val resolver = requireContext().contentResolver
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(resolver, uri)
+            return ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                val width = info.size.width
+                val height = info.size.height
+                val largestSide = maxOf(width, height)
+                if (largestSide > MAX_SELECTED_IMAGE_SIDE) {
+                    val scale = MAX_SELECTED_IMAGE_SIDE.toFloat() / largestSide
+                    decoder.setTargetSize(
+                        (width * scale).toInt().coerceAtLeast(1),
+                        (height * scale).toInt().coerceAtLeast(1)
+                    )
+                }
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        }
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(uri).use { input ->
+            checkNotNull(input) { "Unable to open selected image" }
+            BitmapFactory.decodeStream(input, null, bounds)
+        }
+        var sampleSize = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / sampleSize > MAX_SELECTED_IMAGE_SIDE) {
+            sampleSize *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        return resolver.openInputStream(uri).use { input ->
+            checkNotNull(input) { "Unable to reopen selected image" }
+            checkNotNull(BitmapFactory.decodeStream(input, null, options)) {
+                "Unsupported image format"
+            }
+        }
     }
 
     override fun onViewCreated(
@@ -336,6 +405,14 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 if (capturedBitmap === bitmap) {
                     wheelPreview = result.preview
                     wheelText = result.description
+                    wheelCount = result.wheelCount
+                    wheelConfidence = result.highestConfidence
+                    wheelSubmergedFraction = result.submergedFraction
+                    wheelEstimatedDepthCm = result.estimatedDepthCm
+                    result.estimatedDepthCm?.let { depthCm ->
+                        applyEstimatedFloodDepth(depthCm)
+                        wheelText += "\nFlood Depth Parameter selected automatically. You can change it manually."
+                    }
                 }
             } catch (error: CancellationException) {
                 throw error
@@ -354,11 +431,26 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         renderPhotoPreview()
     }
 
+    private fun applyEstimatedFloodDepth(depthCm: Float) {
+        val radioButtonId = when {
+            depthCm <= 5f -> R.id.radioDepthSafe
+            depthCm <= 15f -> R.id.radioDepthMotorcycle
+            depthCm <= 30f -> R.id.radioDepthSmallCars
+            depthCm <= 50f -> R.id.radioDepthLargeVehicles
+            else -> R.id.radioDepthClosed
+        }
+        radioGroupFloodLevel.check(radioButtonId)
+    }
+
     private fun showCapturedPhoto(bitmap: Bitmap) {
         wheelJob?.cancel()
         wheelJob = null
         wheelPreview = null
         wheelText = ""
+        wheelCount = null
+        wheelConfidence = null
+        wheelSubmergedFraction = null
+        wheelEstimatedDepthCm = null
         analysisJob?.cancel()
         capturedBitmap = bitmap
         analysisText = "Analyzing photo…"
@@ -627,13 +719,19 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         val severity = selectedSeverity()
         val vehicleGuidance =
             vehiclePassabilityFor(depthRange)
+        val wheelDepthLine = wheelEstimatedDepthCm
+            ?.let { "\nWheel-estimated depth: %.1f cm".format(Locale.US, it) }
+            .orEmpty()
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(
+            requireContext(),
+            R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+        )
             .setTitle("Confirm Flood Report")
             .setMessage(
                 "Flood depth: $depthRange\n" +
                         "Flood level: $floodLevel\n" +
-                        "Vehicle guidance: $vehicleGuidance\n" +
+                        "Vehicle guidance: $vehicleGuidance" + wheelDepthLine + "\n" +
                         formattedElevation()
             )
             .setPositiveButton("Submit") { _, _ ->
@@ -690,8 +788,8 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
             add(address)
             add(coordinates)
             add(formattedElevation())
-            if (currentElevationSource == ElevationSource.TERRAIN_DEM) {
-                add("Elevation data: Open-Meteo / Copernicus DEM")
+            wheelEstimatedDepthCm?.let {
+                add("Wheel-estimated flood depth: %.1f cm".format(Locale.US, it))
             }
             add(timestamp)
         }
@@ -834,9 +932,16 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                     passability = passability,
                     status = "pending",
                     severity = severity,
+                    wheelCount = wheelCount,
+                    wheelConfidence = wheelConfidence?.toDouble(),
+                    wheelSubmergedPercent = wheelSubmergedFraction?.times(100)?.toDouble(),
+                    wheelEstimatedDepthCm = wheelEstimatedDepthCm?.toDouble(),
                     description =
                         "Flood depth: $depthRange. " +
                                 "Vehicle guidance: $vehicleGuidance. " +
+                                (wheelEstimatedDepthCm?.let {
+                                    "Wheel-estimated depth: %.1f cm. ".format(Locale.US, it)
+                                } ?: "") +
                                 formattedElevation()
                 )
 
@@ -859,6 +964,10 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                     wheelJob = null
                     wheelPreview = null
                     wheelText = ""
+                    wheelCount = null
+                    wheelConfidence = null
+                    wheelSubmergedFraction = null
+                    wheelEstimatedDepthCm = null
                     analysisJob?.cancel()
                     analysisText = ""
                     renderPhotoPreview()
@@ -884,7 +993,10 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 )
 
                 if (isAdded) {
-                    AlertDialog.Builder(requireContext())
+                    MaterialAlertDialogBuilder(
+                        requireContext(),
+                        R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+                    )
                         .setTitle("Submission Error")
                         .setMessage(
                             "Detail: ${e.localizedMessage}"
@@ -939,5 +1051,6 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
 
     companion object {
         private const val REPORT_MAP_TAG = "report_location_map"
+        private const val MAX_SELECTED_IMAGE_SIDE = 2048
     }
 }

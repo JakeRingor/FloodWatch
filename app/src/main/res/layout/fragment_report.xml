@@ -259,6 +259,18 @@
                     app:backgroundTint="#2563EB"
                     app:icon="@drawable/ic_camera"
                     app:iconTint="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonUploadImage"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Upload Image"
+                    android:textColor="#2563EB"
+                    app:icon="@drawable/ic_gallery"
+                    app:iconTint="#2563EB"
+                    app:strokeColor="#2563EB" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton

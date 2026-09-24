@@ -16,7 +16,14 @@ import java.io.File
 import java.nio.FloatBuffer
 
 object WheelAnalysis {
-    data class Result(val preview: Bitmap, val description: String)
+    data class Result(
+        val preview: Bitmap,
+        val description: String,
+        val estimatedDepthCm: Float?,
+        val wheelCount: Int,
+        val highestConfidence: Float?,
+        val submergedFraction: Float?
+    )
     private val lock = Mutex()
     private val environment by lazy { OrtEnvironment.getEnvironment() }
     private var session: OrtSession? = null
@@ -71,6 +78,8 @@ object WheelAnalysis {
                 canvas.drawRect(box.left * original.width, box.top * original.height,
                     box.right * original.width, box.bottom * original.height, paint)
             }
+            var estimatedDepthCm: Float? = null
+            var submergedFraction: Float? = null
             val description = if (boxes.isEmpty()) {
                 "No wheel detected.\nSubmerged: unavailable\nDepth: unavailable"
             } else {
@@ -107,12 +116,22 @@ object WheelAnalysis {
                 } else {
                     val waterY = top + row
                     val fraction = WheelWaterline.fraction(top.toFloat(), bottom.toFloat(), waterY.toFloat())!!
+                    submergedFraction = fraction
+                    estimatedDepthCm = fraction * 60f
                     paint.color = Color.YELLOW
                     canvas.drawLine(left.toFloat(), waterY.toFloat(), right.toFloat(), waterY.toFloat(), paint)
-                    "$heading\nEstimated submerged height: %.1f%%\nEstimated depth: %.1f cm\nExperimental: assumes a full wheel and a 60 cm tire diameter. Yellow line marks an unverified waterline candidate on the highest-confidence wheel. Confirm manually.".format(fraction * 100, fraction * 60)
+                    "%s\nEstimated submerged height: %.1f%%\nEstimated depth: %.1f cm\nExperimental: assumes a full wheel and a 60 cm tire diameter. Yellow line marks an unverified waterline candidate on the highest-confidence wheel. Confirm manually."
+                        .format(heading, fraction * 100, estimatedDepthCm)
                 }
             }
-            Result(preview, description)
+            Result(
+                preview = preview,
+                description = description,
+                estimatedDepthCm = estimatedDepthCm,
+                wheelCount = boxes.size,
+                highestConfidence = boxes.firstOrNull()?.score,
+                submergedFraction = submergedFraction
+            )
         }
     }
 }
