@@ -45,13 +45,20 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
-        if (session == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
+        lifecycleScope.launch {
+            // Activity recreation can happen before the saved session is loaded.
+            SupabaseClient.client.auth.awaitInitialization()
+            val session = SupabaseClient.client.auth.currentSessionOrNull()
+            if (session?.user?.emailConfirmedAt == null) {
+                startActivity(Intent(this@HomeActivity, LoginActivity::class.java))
+                finish()
+                return@launch
+            }
+            initializeHome(savedInstanceState)
         }
+    }
 
+    private fun initializeHome(savedInstanceState: Bundle?) {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)

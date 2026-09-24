@@ -48,7 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:text="   Stay safe in Sta. Ana Taytay Rizal with AI-powered flood            predictions using real-time water level data"
+        android:text="Sign in to view flood updates and share reports in Sta. Ana, Taytay, Rizal."
         android:textColor="#5A7A99"
         android:textSize="13sp"
         android:gravity="center"/>

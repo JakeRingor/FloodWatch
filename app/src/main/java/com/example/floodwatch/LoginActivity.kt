@@ -13,10 +13,13 @@ import com.example.floodwatch.databinding.ActivityLoginBinding
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private var restoreJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,12 +64,10 @@ class LoginActivity : AppCompatActivity() {
 
             binding.buttonLogin.isEnabled = false
             binding.buttonLogin.text = "Signing in…"
-            SupabaseClient.setPersistentSessionsEnabled(
-                binding.checkBoxKeepSigned.isChecked
-            )
-
             lifecycleScope.launch {
                 try {
+                    SupabaseClient.client.auth.awaitInitialization()
+                    SupabaseClient.setPersistentSessionsEnabled(binding.checkBoxKeepSigned.isChecked)
                     SupabaseClient.client.auth.signInWith(Email) {
                         this.email = email
                         this.password = password
@@ -89,6 +90,8 @@ class LoginActivity : AppCompatActivity() {
                     startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                     finish()
 
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     binding.buttonLogin.isEnabled = true
                     binding.buttonLogin.text = "Login to Dashboard"
@@ -128,24 +131,31 @@ class LoginActivity : AppCompatActivity() {
         val fromDeepLink = intent?.data?.host == "verify-email"
         if (fromLogout || fromReset || fromDeepLink) return
 
-        try {
-            val session = SupabaseClient.client.auth.currentSessionOrNull()
-            if (session != null) {
-                val user = SupabaseClient.client.auth.currentUserOrNull()
-
-                // ── Block unverified users from auto-login ─────
-                if (user?.emailConfirmedAt == null) {
-                    lifecycleScope.launch {
-                        try { SupabaseClient.client.auth.signOut() } catch (e: Exception) { }
-                    }
-                    return
+        if (restoreJob?.isActive == true) return
+        binding.buttonLogin.isEnabled = false
+        binding.buttonLogin.text = "Restoring session…"
+        restoreJob = lifecycleScope.launch {
+            try {
+                val auth = SupabaseClient.client.auth
+                auth.awaitInitialization()
+                val session = auth.currentSessionOrNull()
+                if (session?.user?.emailConfirmedAt != null) {
+                    startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
+                    finish()
                 }
-
-                startActivity(Intent(this, HomeActivity::class.java))
-                finish()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Toast.makeText(this@LoginActivity, "Unable to restore your session. Please sign in.", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.buttonLogin.isEnabled = true
+                binding.buttonLogin.text = "Login to Dashboard"
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+    }
+
+    override fun onStop() {
+        restoreJob?.cancel()
+        super.onStop()
     }
 }

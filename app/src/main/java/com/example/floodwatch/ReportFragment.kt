@@ -65,6 +65,9 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     private var capturedBitmap: Bitmap? = null
     private var analysisJob: Job? = null
     private var analysisText = ""
+    private var wheelJob: Job? = null
+    private var wheelPreview: Bitmap? = null
+    private var wheelText = ""
 
     private lateinit var textViewAddress: TextView
     private lateinit var radioGroupFloodLevel: RadioGroup
@@ -160,11 +163,6 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
 
         textViewAddress = view.findViewById(R.id.textViewAddress)
         btnAutoDetect = view.findViewById(R.id.buttonAutoDetect)
-        view.findViewById<MaterialButton>(R.id.buttonFloodDemo).setOnClickListener {
-            if (childFragmentManager.findFragmentByTag("flood-level-demo") == null) {
-                FloodLevelDemoDialog().show(childFragmentManager, "flood-level-demo")
-            }
-        }
 
         radioGroupFloodLevel =
             view.findViewById(R.id.radioGroupFloodLevel)
@@ -314,23 +312,57 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         val root = view ?: return
         val hasPhoto = capturedBitmap != null
         root.findViewById<ImageView>(R.id.capturedPhotoPreview).apply {
-            setImageBitmap(capturedBitmap)
+            setImageBitmap(wheelPreview ?: capturedBitmap)
             visibility = if (hasPhoto) View.VISIBLE else View.GONE
         }
         root.findViewById<View>(R.id.capturePlaceholder).visibility = if (hasPhoto) View.GONE else View.VISIBLE
         root.findViewById<TextView>(R.id.captureTitle).text = if (hasPhoto) "Review Your Photo" else "Capture Visual Proof"
         root.findViewById<TextView>(R.id.photoAnalysisResult).apply {
-            text = analysisText
+            text = listOf(analysisText, wheelText).filter { it.isNotBlank() }.joinToString("\n\n")
             visibility = if (hasPhoto) View.VISIBLE else View.GONE
         }
         root.findViewById<MaterialButton>(R.id.buttonGallery).text = if (hasPhoto) "Retake Photo" else "Open Camera"
     }
 
+    private fun analyzeWheel() {
+        val bitmap = capturedBitmap ?: return
+        val appContext = requireContext().applicationContext
+        wheelJob?.cancel()
+        wheelPreview = null
+        wheelText = "Checking for wheels…"
+        wheelJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val result = WheelAnalysis.analyze(appContext, bitmap)
+                if (capturedBitmap === bitmap) {
+                    wheelPreview = result.preview
+                    wheelText = result.description
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                if (capturedBitmap === bitmap) {
+                    Log.e("FloodWatch", "Offline wheel detection failed", error)
+                    wheelText = "Wheel analysis unavailable. Try another photo. You can still report your observations."
+                }
+            } finally {
+                if (capturedBitmap === bitmap && view != null) {
+                    wheelJob = null
+                    renderPhotoPreview()
+                }
+            }
+        }
+        renderPhotoPreview()
+    }
+
     private fun showCapturedPhoto(bitmap: Bitmap) {
+        wheelJob?.cancel()
+        wheelJob = null
+        wheelPreview = null
+        wheelText = ""
         analysisJob?.cancel()
         capturedBitmap = bitmap
         analysisText = "Analyzing photo…"
-        renderPhotoPreview()
+        analyzeWheel()
         val appContext = requireContext().applicationContext
         analysisJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -823,6 +855,10 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                     ).show()
 
                     capturedBitmap = null
+                    wheelJob?.cancel()
+                    wheelJob = null
+                    wheelPreview = null
+                    wheelText = ""
                     analysisJob?.cancel()
                     analysisText = ""
                     renderPhotoPreview()
@@ -875,6 +911,8 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     }
 
     override fun onDestroyView() {
+        wheelJob?.cancel()
+        wheelJob = null
         analysisJob?.cancel()
         analysisJob = null
         val channel = realtimeChannel
