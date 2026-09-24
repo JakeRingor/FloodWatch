@@ -43,6 +43,8 @@ import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -61,6 +63,11 @@ import java.util.Locale
 class ReportFragment : Fragment(), OnMapReadyCallback {
 
     private var capturedBitmap: Bitmap? = null
+    private var analysisJob: Job? = null
+    private var analysisText = ""
+    private var wheelJob: Job? = null
+    private var wheelPreview: Bitmap? = null
+    private var wheelText = ""
 
     private lateinit var textViewAddress: TextView
     private lateinit var radioGroupFloodLevel: RadioGroup
@@ -113,7 +120,7 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                 path?.let { runCatching { File(it).delete() } }
 
                 if (bitmap != null) {
-                    showImagePreviewDialog(bitmap)
+                    showCapturedPhoto(bitmap)
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -187,6 +194,8 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         savedInstanceState: Bundle?
     ) {
         super.onViewCreated(view, savedInstanceState)
+        renderPhotoPreview()
+        capturedBitmap?.let { showCapturedPhoto(it) }
 
         // The report screen only needs a location preview and a marker. Lite mode
         // renders that much faster on a cold cache than creating a second fully
@@ -299,31 +308,84 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun showImagePreviewDialog(bitmap: Bitmap) {
-        val previewView = ImageView(requireContext()).apply {
-            setImageBitmap(
-                addOverlayToBitmap(
-                    bitmap,
-                    textViewAddress.text.toString()
-                )
-            )
-            adjustViewBounds = true
-            setPadding(20, 20, 20, 20)
+    private fun renderPhotoPreview() {
+        val root = view ?: return
+        val hasPhoto = capturedBitmap != null
+        root.findViewById<ImageView>(R.id.capturedPhotoPreview).apply {
+            setImageBitmap(wheelPreview ?: capturedBitmap)
+            visibility = if (hasPhoto) View.VISIBLE else View.GONE
         }
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("Preview Photo")
-            .setMessage("Is this photo clear? You can retake it if needed.")
-            .setView(previewView)
-            .setPositiveButton("Use Photo") { _, _ ->
-                capturedBitmap = bitmap
-            }
-            .setNegativeButton("Retake") { _, _ ->
-                launchCamera()
-            }
-            .setCancelable(false)
-            .show()
+        root.findViewById<View>(R.id.capturePlaceholder).visibility = if (hasPhoto) View.GONE else View.VISIBLE
+        root.findViewById<TextView>(R.id.captureTitle).text = if (hasPhoto) "Review Your Photo" else "Capture Visual Proof"
+        root.findViewById<TextView>(R.id.photoAnalysisResult).apply {
+            text = listOf(analysisText, wheelText).filter { it.isNotBlank() }.joinToString("\n\n")
+            visibility = if (hasPhoto) View.VISIBLE else View.GONE
+        }
+        root.findViewById<MaterialButton>(R.id.buttonGallery).text = if (hasPhoto) "Retake Photo" else "Open Camera"
     }
+
+    private fun analyzeWheel() {
+        val bitmap = capturedBitmap ?: return
+        val appContext = requireContext().applicationContext
+        wheelJob?.cancel()
+        wheelPreview = null
+        wheelText = "Checking for wheels…"
+        wheelJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val result = WheelAnalysis.analyze(appContext, bitmap)
+                if (capturedBitmap === bitmap) {
+                    wheelPreview = result.preview
+                    wheelText = result.description
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                if (capturedBitmap === bitmap) {
+                    Log.e("FloodWatch", "Offline wheel detection failed", error)
+                    wheelText = "Wheel analysis unavailable. Try another photo. You can still report your observations."
+                }
+            } finally {
+                if (capturedBitmap === bitmap && view != null) {
+                    wheelJob = null
+                    renderPhotoPreview()
+                }
+            }
+        }
+        renderPhotoPreview()
+    }
+
+    private fun showCapturedPhoto(bitmap: Bitmap) {
+        wheelJob?.cancel()
+        wheelJob = null
+        wheelPreview = null
+        wheelText = ""
+        analysisJob?.cancel()
+        capturedBitmap = bitmap
+        analysisText = "Analyzing photo…"
+        analyzeWheel()
+        val appContext = requireContext().applicationContext
+        analysisJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val score = withContext(Dispatchers.Default) {
+                    FloodClassifier.predict(appContext, bitmap)
+                }
+                if (capturedBitmap === bitmap) {
+                    val label = if (score >= FloodClassifier.THRESHOLD) "FLOOD" else "NO FLOOD"
+                    analysisText = "Result: $label\nFlood score: %.1f%%\n\nThis estimate can be wrong. Confirm the conditions before reporting.".format(score * 100)
+                    renderPhotoPreview()
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.e("FloodWatch", "Photo analysis failed", error)
+                if (capturedBitmap === bitmap) {
+                    analysisText = "Photo analysis unavailable. You can still submit the conditions you observed."
+                    renderPhotoPreview()
+                }
+            }
+        }
+    }
+
 
     override fun onMapReady(googleMap: GoogleMap) {
         mGoogleMap = googleMap
@@ -793,6 +855,13 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
                     ).show()
 
                     capturedBitmap = null
+                    wheelJob?.cancel()
+                    wheelJob = null
+                    wheelPreview = null
+                    wheelText = ""
+                    analysisJob?.cancel()
+                    analysisText = ""
+                    renderPhotoPreview()
                     locationDetected = false
                     currentElevationMeters = null
                     currentElevationAccuracyMeters = null
@@ -842,6 +911,10 @@ class ReportFragment : Fragment(), OnMapReadyCallback {
     }
 
     override fun onDestroyView() {
+        wheelJob?.cancel()
+        wheelJob = null
+        analysisJob?.cancel()
+        analysisJob = null
         val channel = realtimeChannel
         realtimeChannel = null
         lifecycleScope.launch {
