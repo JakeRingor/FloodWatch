@@ -108,6 +108,7 @@ class HomeActivity : AppCompatActivity() {
 
         createReportStatusNotificationChannel()
         requestNotificationPermissionIfNeeded()
+        PushNotificationManager.syncCurrentDevice(this)
         listenForReportApprovals()
     }
 
@@ -273,7 +274,7 @@ class HomeActivity : AppCompatActivity() {
 
     companion object {
         private const val REPORT_STATUS_CHANNEL_ID = "report_status_updates"
-        private const val EXTRA_OPEN_ALERTS = "open_alerts"
+        const val EXTRA_OPEN_ALERTS = "open_alerts"
         private const val PROFILE_PREFS = "profile_preferences"
         private const val PREF_FLOOD_ALERTS = "notify_flood_alerts"
         private const val NOTIFICATION_HISTORY_PREFS = "notification_history"

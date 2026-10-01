@@ -60,6 +60,10 @@ android {
     }
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 
 
 dependencies {
@@ -76,6 +80,10 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("androidx.gridlayout:gridlayout:1.0.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // FCM is used only for delivery; Supabase remains the app database/backend.
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation("com.google.firebase:firebase-messaging")
 
     // In-app camera preview and full-resolution capture
     val cameraXVersion = "1.4.2"

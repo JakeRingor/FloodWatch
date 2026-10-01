@@ -27,6 +27,13 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${mapsApiKey}" />
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_verified_card" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="new_flood_reports" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true">
@@ -67,6 +74,14 @@
             android:name=".LegalDocumentActivity"
             android:exported="false" />
         <activity android:name=".HomeActivity" android:exported="false" />
+
+        <service
+            android:name=".FloodWatchMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <activity
             android:name=".CameraCaptureActivity"
             android:exported="false"

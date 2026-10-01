@@ -188,6 +188,7 @@ class ProfileFragment : Fragment() {
 
         binding.switchFloodAlerts.setOnCheckedChangeListener { _, enabled ->
             prefs.edit().putBoolean(PREF_FLOOD_ALERTS, enabled).apply()
+            PushNotificationManager.setCurrentDeviceEnabled(requireContext(), enabled)
             if (enabled) requestNotificationPermissionIfNeeded()
         }
     }
@@ -388,6 +389,7 @@ class ProfileFragment : Fragment() {
         binding.logoutBtn.text = "Signing out…"
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                PushNotificationManager.unregisterCurrentDevice(requireContext())
                 SupabaseClient.client.auth.signOut()
             } catch (e: CancellationException) {
                 throw e

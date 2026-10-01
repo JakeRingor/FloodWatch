@@ -1,5 +1,7 @@
 # Machine-specific Android/Gradle files
 local.properties
+app/google-services.json
+firebase-service-account*.json
 .gradle/
 .android/
 .idea/

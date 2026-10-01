@@ -18,5 +18,6 @@ class FloodWatchApplication : Application() {
             Log.d("FloodWatchMaps", "Maps renderer initialized: $renderer")
         }
         SupabaseClient.init(this)
+        PushNotificationManager.createNotificationChannels(this)
     }
 }
