@@ -96,7 +96,10 @@ class SignupActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    SupabaseClient.client.auth.signUpWith(Email) {
+                    SupabaseClient.client.auth.signUpWith(
+                        provider = Email,
+                        redirectUrl = SupabaseClient.VERIFY_EMAIL_REDIRECT
+                    ) {
                         this.email = email
                         this.password = password
                         data = buildJsonObject {

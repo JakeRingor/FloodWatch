@@ -5,6 +5,7 @@ type FloodReport = {
   user_id: string;
   address: string | null;
   flood_level: string | null;
+  status: string | null;
 };
 
 type FloodAlert = {
@@ -20,6 +21,7 @@ type WebhookPayload = {
   table: string;
   schema: string;
   record: FloodReport | FloodAlert;
+  old_record?: FloodReport | FloodAlert | null;
 };
 
 const encoder = new TextEncoder();
@@ -68,26 +70,90 @@ async function getGoogleAccessToken(serviceAccount: Record<string, string>): Pro
   return (await response.json()).access_token;
 }
 
+async function hasValidServiceRoleAuthorization(
+  request: Request,
+  supabaseUrl: string,
+  configuredServiceRoleKey: string | undefined,
+): Promise<boolean> {
+  const authorization = request.headers.get("authorization") ?? "";
+  const bearerKey = authorization.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length).trim()
+    : "";
+  const apiKey = (request.headers.get("apikey") ?? "").trim();
+  const suppliedKey = bearerKey || apiKey;
+  if (!suppliedKey) return false;
+
+  // Fast path for projects where the injected key and webhook key use the
+  // same key generation (legacy JWT or the newer secret key).
+  if (configuredServiceRoleKey && suppliedKey === configuredServiceRoleKey) return true;
+
+  // Supabase projects can expose both legacy service_role JWTs and newer
+  // secret keys. Validate either kind against the Auth Admin endpoint rather
+  // than relying on a string comparison between different key generations.
+  const headers: Record<string, string> = { apikey: suppliedKey };
+  if (bearerKey) headers.Authorization = `Bearer ${bearerKey}`;
+  const response = await fetch(`${supabaseUrl}/auth/v1/admin/users?page=1&per_page=1`, { headers });
+  return response.ok;
+}
+
 Deno.serve(async (request) => {
   try {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
-    const hasServiceRole = Boolean(
-      serviceRoleKey && request.headers.get("authorization") === `Bearer ${serviceRoleKey}`
+    const hasServiceRole = await hasValidServiceRoleAuthorization(
+      request,
+      supabaseUrl,
+      serviceRoleKey,
     );
     const hasWebhookSecret = Boolean(
       webhookSecret && request.headers.get("x-webhook-secret") === webhookSecret
     );
     if (!hasServiceRole && !hasWebhookSecret) {
+      console.warn(JSON.stringify({
+        rejected: true,
+        reason: "unauthorized webhook",
+        hasAuthorizationHeader: Boolean(request.headers.get("authorization")),
+        hasApiKeyHeader: Boolean(request.headers.get("apikey")),
+        hasWebhookSecretHeader: Boolean(request.headers.get("x-webhook-secret")),
+      }));
       return new Response("Unauthorized", { status: 401 });
     }
 
     const payload = await request.json() as WebhookPayload;
-    const supportedTable = payload.table === "flood_reports" || payload.table === "flood_alerts";
-    if (payload.type !== "INSERT" || !supportedTable || !payload.record?.id) {
-      return Response.json({ skipped: true });
+    const isNewReport = payload.type === "INSERT" && payload.table === "flood_reports";
+    const isAdminAlert = payload.type === "INSERT" && payload.table === "flood_alerts";
+    const report = payload.record as FloodReport;
+    const oldReport = payload.old_record as FloodReport | undefined;
+    const normalizedStatus = report.status?.trim().toUpperCase();
+    const oldStatus = oldReport?.status?.trim().toUpperCase();
+    const isVerifiedReport = payload.type === "UPDATE" &&
+      payload.table === "flood_reports" &&
+      normalizedStatus === "VERIFIED" &&
+      oldStatus !== "VERIFIED";
+
+    if ((!isNewReport && !isAdminAlert && !isVerifiedReport) || !payload.record?.id) {
+      console.log(JSON.stringify({
+        skipped: true,
+        type: payload.type,
+        table: payload.table,
+        hasRecordId: Boolean(payload.record?.id),
+        status: normalizedStatus,
+        oldStatus,
+      }));
+      return Response.json({
+        skipped: true,
+        reason: "unsupported event or unchanged status",
+        diagnostics: {
+          type: payload.type,
+          table: payload.table,
+          hasRecordId: Boolean(payload.record?.id),
+          status: normalizedStatus ?? null,
+          oldStatus: oldStatus ?? null,
+        },
+      });
     }
-    if (payload.table === "flood_alerts" && (payload.record as FloodAlert).is_active === false) {
+    if (isAdminAlert && (payload.record as FloodAlert).is_active === false) {
       return Response.json({ skipped: true, reason: "inactive alert" });
     }
 
@@ -101,34 +167,46 @@ Deno.serve(async (request) => {
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      serviceRoleKey,
+      supabaseUrl,
+      serviceRoleKey!,
     );
     let deviceQuery = supabase
       .from("device_push_tokens")
       .select("token")
       .eq("enabled", true);
-    if (payload.table === "flood_reports") {
-      deviceQuery = deviceQuery.neq("user_id", (payload.record as FloodReport).user_id);
+    if (isVerifiedReport) {
+      // Status notifications are private: send only to the report owner.
+      deviceQuery = deviceQuery.eq("user_id", report.user_id);
+    } else if (isNewReport) {
+      deviceQuery = deviceQuery.neq("user_id", report.user_id);
     }
     const { data: devices, error } = await deviceQuery;
     if (error) throw error;
     if (!devices?.length) return Response.json({ sent: 0 });
 
     const accessToken = await getGoogleAccessToken(serviceAccount);
-    const isAdminAlert = payload.table === "flood_alerts";
-    const report = payload.record as FloodReport;
     const alert = payload.record as FloodAlert;
     const level = report.flood_level?.toUpperCase();
     const location = report.address?.trim() || "your community";
-    const severity = alert.severity?.toUpperCase() || "ALERT";
-    const title = isAdminAlert
+    // flood_reports also has a numeric `severity` column. Only interpret
+    // severity as alert text when this payload actually came from
+    // flood_alerts; otherwise calling toUpperCase() on the number crashes.
+    const severity = isAdminAlert
+      ? String(alert.severity ?? "ALERT").toUpperCase()
+      : "ALERT";
+    const title = isVerifiedReport
+      ? "Flood report verified"
+      : isAdminAlert
       ? `${severity}: ${alert.title}`
       : level ? `New ${level} flood report` : "New flood report";
-    const body = isAdminAlert
+    const body = isVerifiedReport
+      ? `Your report at ${location} was verified by the admin.`
+      : isAdminAlert
       ? alert.message
       : `A new flood report was submitted at ${location}.`;
-    const channelId = isAdminAlert ? "admin_flood_alerts" : "new_flood_reports";
+    const channelId = isVerifiedReport
+      ? "report_status_updates"
+      : isAdminAlert ? "admin_flood_alerts" : "new_flood_reports";
 
     const results = await Promise.all(devices.map(async ({ token }) => {
       const response = await fetch(
@@ -142,9 +220,15 @@ Deno.serve(async (request) => {
           body: JSON.stringify({
             message: {
               token,
+              // Include a notification payload so Android displays status
+              // updates reliably even when the app process is backgrounded or
+              // not currently running. Foreground delivery is still handled by
+              // FloodWatchMessagingService in the Android app.
               notification: { title, body },
               data: {
-                ...(isAdminAlert
+                ...(isVerifiedReport
+                  ? { report_id: payload.record.id, type: "report_status", status: "VERIFIED" }
+                  : isAdminAlert
                   ? { alert_id: payload.record.id, type: "admin_alert" }
                   : { report_id: payload.record.id, type: "new_report" }),
                 title,

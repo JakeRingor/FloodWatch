@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.floodwatch.databinding.ActivityLoginBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
@@ -36,17 +37,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // ── Handle email verification deep link ────────────────
-        if (intent?.data?.host == "verify-email") {
-            MaterialAlertDialogBuilder(
-                this,
-                R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
-            )
-                .setTitle("Email Verified!")
-                .setMessage("Your email has been verified. You can now log in to your FloodWatch account.")
-                .setPositiveButton("OK", null)
-                .setCancelable(false)
-                .show()
-        }
+        handleEmailVerificationLink(intent)
 
         // ── Pre-fill email if coming from ForgotPassword or ResetPassword ──
         val prefillEmail = intent.getStringExtra("prefill_email")
@@ -163,5 +154,27 @@ class LoginActivity : AppCompatActivity() {
     override fun onStop() {
         restoreJob?.cancel()
         super.onStop()
+    }
+
+    private fun handleEmailVerificationLink(incomingIntent: Intent?) {
+        val data = incomingIntent?.data ?: return
+        if (data.scheme != SupabaseClient.AUTH_SCHEME ||
+            data.host != SupabaseClient.VERIFY_EMAIL_HOST
+        ) return
+
+        // Validate and import the Supabase callback before showing success.
+        SupabaseClient.client.handleDeeplinks(incomingIntent) {
+            runOnUiThread {
+                MaterialAlertDialogBuilder(
+                    this,
+                    R.style.ThemeOverlay_FloodWatch_MaterialAlertDialog
+                )
+                    .setTitle("Email Verified!")
+                    .setMessage("Your email has been verified. You can now log in to your FloodWatch account.")
+                    .setPositiveButton("OK", null)
+                    .setCancelable(false)
+                    .show()
+            }
+        }
     }
 }

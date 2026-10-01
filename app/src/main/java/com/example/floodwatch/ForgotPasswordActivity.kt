@@ -58,7 +58,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
                 try {
                     SupabaseClient.client.auth.resetPasswordForEmail(
                         email = email,
-                        redirectUrl = "com.example.floodwatch://reset-password"
+                        redirectUrl = SupabaseClient.RESET_PASSWORD_REDIRECT
                     )
 
                     // Show success card, hide form card

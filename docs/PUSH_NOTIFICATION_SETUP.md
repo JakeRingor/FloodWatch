@@ -27,6 +27,17 @@ The Android and Supabase code is implemented. Complete these one-time cloud step
    for the `public.flood_alerts` table. This delivers official admin alerts to
    every enabled device.
 
+   Create a third webhook for `public.flood_reports`:
+   - Event: `UPDATE`
+   - Type: Supabase Edge Function
+   - Function: `send-new-report-push`
+   - Method: `POST`
+   - Click **Add auth header with service key**
+
+   The function ignores unrelated updates. When a report changes to
+   `VERIFIED`, it sends a private status notification only to enabled devices
+   registered to that report's owner.
+
 5. Rebuild/install the Android app, sign in, and grant notification permission.
    Open it once so its FCM token is stored in `device_push_tokens`.
 
