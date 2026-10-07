@@ -127,12 +127,18 @@ Deno.serve(async (request) => {
     const oldReport = payload.old_record as FloodReport | undefined;
     const normalizedStatus = report.status?.trim().toUpperCase();
     const oldStatus = oldReport?.status?.trim().toUpperCase();
-    const isVerifiedReport = payload.type === "UPDATE" &&
+    const notifiableReportStatuses = new Set([
+      "VERIFIED",
+      "DISMISSED",
+      "INVALID_IMAGE",
+      "INVALID_INFORMATION",
+    ]);
+    const isReportStatusUpdate = payload.type === "UPDATE" &&
       payload.table === "flood_reports" &&
-      normalizedStatus === "VERIFIED" &&
-      oldStatus !== "VERIFIED";
+      Boolean(normalizedStatus && notifiableReportStatuses.has(normalizedStatus)) &&
+      oldStatus !== normalizedStatus;
 
-    if ((!isNewReport && !isAdminAlert && !isVerifiedReport) || !payload.record?.id) {
+    if ((!isNewReport && !isAdminAlert && !isReportStatusUpdate) || !payload.record?.id) {
       console.log(JSON.stringify({
         skipped: true,
         type: payload.type,
@@ -174,7 +180,7 @@ Deno.serve(async (request) => {
       .from("device_push_tokens")
       .select("token")
       .eq("enabled", true);
-    if (isVerifiedReport) {
+    if (isReportStatusUpdate) {
       // Status notifications are private: send only to the report owner.
       deviceQuery = deviceQuery.eq("user_id", report.user_id);
     } else if (isNewReport) {
@@ -194,17 +200,36 @@ Deno.serve(async (request) => {
     const severity = isAdminAlert
       ? String(alert.severity ?? "ALERT").toUpperCase()
       : "ALERT";
-    const title = isVerifiedReport
-      ? "Flood report verified"
+    const statusNotification = normalizedStatus === "VERIFIED"
+      ? {
+        title: "Flood report verified",
+        body: `Your report at ${location} was verified by the admin.`,
+      }
+      : normalizedStatus === "DISMISSED"
+      ? {
+        title: "Flood report dismissed",
+        body: `Your report at ${location} was dismissed by the admin.`,
+      }
+      : normalizedStatus === "INVALID_IMAGE"
+      ? {
+        title: "Report needs a valid image",
+        body: `Your report at ${location} was not approved because of its image.`,
+      }
+      : {
+        title: "Report information not verified",
+        body: `Your report at ${location} was not approved because its information could not be verified.`,
+      };
+    const title = isReportStatusUpdate
+      ? statusNotification.title
       : isAdminAlert
       ? `${severity}: ${alert.title}`
       : level ? `New ${level} flood report` : "New flood report";
-    const body = isVerifiedReport
-      ? `Your report at ${location} was verified by the admin.`
+    const body = isReportStatusUpdate
+      ? statusNotification.body
       : isAdminAlert
       ? alert.message
       : `A new flood report was submitted at ${location}.`;
-    const channelId = isVerifiedReport
+    const channelId = isReportStatusUpdate
       ? "report_status_updates"
       : isAdminAlert ? "admin_flood_alerts" : "new_flood_reports";
 
@@ -226,8 +251,12 @@ Deno.serve(async (request) => {
               // FloodWatchMessagingService in the Android app.
               notification: { title, body },
               data: {
-                ...(isVerifiedReport
-                  ? { report_id: payload.record.id, type: "report_status", status: "VERIFIED" }
+                ...(isReportStatusUpdate
+                  ? {
+                    report_id: payload.record.id,
+                    type: "report_status",
+                    status: normalizedStatus!,
+                  }
                   : isAdminAlert
                   ? { alert_id: payload.record.id, type: "admin_alert" }
                   : { report_id: payload.record.id, type: "new_report" }),

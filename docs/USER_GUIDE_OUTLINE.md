@@ -268,8 +268,8 @@ The five-chapter progression is inspired by the broad task-oriented organization
 - Workflow: depth → location → photo → review → submit → `pending`.
 
 ### Screen tour
-- **Report Flood Incident**, lite map, **Auto-detect My Location**, **CURRENT ADDRESS**, depth choices, guidance, **Open Camera**, **Submit Flood Report**.
-- Despite an internal “Gallery” ID, no report-photo gallery picker is implemented.
+- **Report Flood Incident**, lite map, **Auto-detect My Location**, **CURRENT ADDRESS**, depth choices, guidance, **Open Camera**, **Upload Image**, offline analysis, and **Submit Flood Report**.
+- Camera captures and uploaded images both become the current report photo and run flood and wheel analysis.
 
 ### Depth mapping
 - 0–5 cm → LOW/1/Passable.
@@ -295,6 +295,14 @@ The five-chapter progression is inspired by the broad task-oriented organization
 - **Camera permission denied**, **Unable to open camera**, **Photo capture failed**.
 - Portrait preview, close control, progress, **CAPTURE**, temporary JPEG.
 
+### Image upload and wheel analysis
+- **Upload Image** opens the device image picker; unsupported images show **Could not load selected image**.
+- The on-device wheel detector can show count, confidence, submerged percentage, and an estimated depth in centimeters.
+- A green box marks detected wheels; a yellow line marks an unverified waterline candidate.
+- The estimate assumes a full 60 cm tire and is experimental; users must confirm conditions manually.
+- A usable estimate automatically selects the matching depth range, but the user can override it.
+- Explain **No wheel detected**, unavailable depth, and **Wheel analysis unavailable** states.
+
 ### Photo Preview
 - EXIF rotation/downsampling; overlay shows service area, address, coordinates, elevation/source, timestamp.
 - **Is this photo clear? You can retake it if needed.**
@@ -303,12 +311,12 @@ The five-chapter progression is inspired by the broad task-oriented organization
 
 ### Confirmation
 - Missing inputs: **Please capture a photo and detect location first**.
-- **Confirm Flood Report** shows depth, level, guidance, elevation; **Submit** / **Cancel**.
+- **Confirm Flood Report** shows depth, level, guidance, wheel-estimated centimeters when available, and elevation; **Submit** / **Cancel**.
 - No user description field; description is generated.
 
 ### Submission
 - Numbered procedure; progress visible and button disabled.
-- JPEG 90% with overlay; stores user, URL, address, coordinates, level, passability, severity, generated description, status `pending`.
+- JPEG 90% with overlay; stores user, URL, address, coordinates, level, passability, severity, generated description, optional wheel-analysis metrics, and status `pending`.
 - **✅ Report submitted successfully!**
 - State resets to **Detecting location...** and auto-detect.
 - **Expected result:** Pending report appears in My Reports after refresh.
