@@ -1,4 +1,5 @@
 import java.util.Properties
+import com.android.build.api.variant.impl.VariantOutputImpl
 
 plugins {
     alias(libs.plugins.android.application)
@@ -54,6 +55,20 @@ android {
         // The wheel detector is already a binary model. Avoid wasting build
         // time and memory trying to compress the 122 MB ONNX asset.
         noCompress += "onnx"
+    }
+}
+
+// Give generated APKs a clear, shareable filename instead of app-debug.apk.
+// Example: FloodWatch-v1.1.apk
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            (output as? VariantOutputImpl)?.outputFileName?.set(
+                output.versionName.map { versionName ->
+                    "FloodWatch-v$versionName.apk"
+                }
+            )
+        }
     }
 }
 
