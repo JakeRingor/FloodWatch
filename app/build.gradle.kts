@@ -59,14 +59,11 @@ android {
 }
 
 // Give generated APKs a clear, shareable filename instead of app-debug.apk.
-// Example: FloodWatch-v1.1.apk
 androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
             (output as? VariantOutputImpl)?.outputFileName?.set(
-                output.versionName.map { versionName ->
-                    "FloodWatch-v$versionName.apk"
-                }
+                "FloodWatch.apk"
             )
         }
     }
