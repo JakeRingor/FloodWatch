@@ -1,5 +1,7 @@
 package com.example.floodwatch
 
+import com.example.floodwatch.util.PasswordRules
+
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

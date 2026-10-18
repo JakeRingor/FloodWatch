@@ -47,7 +47,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="Report Flood Incident"
+                android:text="@string/fragment_report_text_1"
                 android:textColor="#0F2040"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -58,7 +58,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp"
                 android:gravity="center"
-                android:text="Your report helps emergency responders and citizens stay informed."
+                android:text="@string/fragment_report_text_2"
                 android:textColor="#5A7A99"
                 android:textSize="14sp" />
 
@@ -93,7 +93,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="bottom|center_horizontal"
                             android:layout_marginBottom="16dp"
-                            android:text="Auto-detect My Location"
+                            android:text="@string/fragment_report_text_3"
                             android:textAllCaps="false"
                             android:textColor="#2563EB"
                             app:backgroundTint="#FFFFFF"
@@ -107,9 +107,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="CURRENT ADDRESS"
+                        android:text="@string/fragment_report_text_4"
                         android:textColor="#5A7A99"
-                        android:textSize="10sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <androidx.cardview.widget.CardView
@@ -125,7 +125,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:padding="16dp"
-                            android:text="Detecting location..."
+                            android:text="@string/fragment_report_text_5"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
                     </androidx.cardview.widget.CardView>
@@ -134,9 +134,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="18dp"
-                        android:text="FLOOD DEPTH / PARAMETER"
+                        android:text="@string/fragment_report_text_6"
                         android:textColor="#5A7A99"
-                        android:textSize="10sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <RadioGroup
@@ -151,7 +151,7 @@
                             android:id="@+id/radioDepthSafe"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="0-5 cm - Passable"
+                            android:text="@string/fragment_report_text_7"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
 
@@ -159,7 +159,7 @@
                             android:id="@+id/radioDepthMotorcycle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="6-15 cm - Motorcycles not advised"
+                            android:text="@string/fragment_report_text_8"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
 
@@ -167,7 +167,7 @@
                             android:id="@+id/radioDepthSmallCars"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="16-30 cm - Small cars not advised"
+                            android:text="@string/fragment_report_text_9"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
 
@@ -175,7 +175,7 @@
                             android:id="@+id/radioDepthLargeVehicles"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="31-50 cm - Only large vehicles"
+                            android:text="@string/fragment_report_text_10"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
 
@@ -183,7 +183,7 @@
                             android:id="@+id/radioDepthClosed"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="50+ cm - Not passable"
+                            android:text="@string/fragment_report_text_11"
                             android:textColor="#1F2937"
                             android:textSize="14sp" />
                     </RadioGroup>
@@ -195,7 +195,7 @@
                         android:layout_marginTop="8dp"
                         android:background="#E0F2FE"
                         android:padding="12dp"
-                        android:text="0-5 cm: Passable"
+                        android:text="@string/fragment_report_text_12"
                         android:textColor="#075985"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -216,6 +216,7 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_camera"
+                    android:contentDescription="@null"
                     app:tint="#2563EB" />
 
                 <TextView
@@ -223,7 +224,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Capture Visual Proof"
+                    android:text="@string/fragment_report_text_13"
                     android:textColor="#0F2040"
                     android:textStyle="bold" />
 
@@ -235,7 +236,7 @@
                     android:adjustViewBounds="true"
                     android:maxHeight="360dp"
                     android:scaleType="fitCenter"
-                    android:contentDescription="Photo selected for this flood report"
+                    android:contentDescription="@string/fragment_report_content_description_14"
                     android:visibility="gone" />
 
                 <TextView
@@ -254,7 +255,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="Open Camera"
+                    android:text="@string/fragment_report_text_15"
                     android:textColor="#FFFFFF"
                     app:backgroundTint="#2563EB"
                     app:icon="@drawable/ic_camera"
@@ -266,7 +267,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Upload Image"
+                    android:text="@string/fragment_report_text_16"
                     android:textColor="#2563EB"
                     app:icon="@drawable/ic_gallery"
                     app:iconTint="#2563EB"
@@ -279,7 +280,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:padding="16dp"
-                android:text="Submit Flood Report"
+                android:text="@string/fragment_report_text_17"
                 android:textStyle="bold"
                 app:backgroundTint="#2563EB"
                 app:cornerRadius="16dp" />

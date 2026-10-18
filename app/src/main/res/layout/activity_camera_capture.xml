@@ -25,7 +25,7 @@
         android:layout_gravity="top|start"
         android:layout_margin="20dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Close camera"
+        android:contentDescription="@string/close_camera"
         android:padding="12dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         app:tint="@android:color/white" />
@@ -36,7 +36,7 @@
         android:layout_height="64dp"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="55dp"
-        android:text="CAPTURE"
+        android:text="@string/capture"
         android:textSize="12sp"
         app:cornerRadius="32dp" />
 

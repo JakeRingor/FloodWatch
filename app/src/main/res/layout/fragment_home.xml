@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F0F4F8"
-    tools:context="com.example.floodwatch.HomeFragment">
+    tools:context="com.example.floodwatch.ui.HomeFragment">
 
     <!-- Top App Bar -->
     <com.google.android.material.appbar.AppBarLayout
@@ -43,12 +43,12 @@
                         app:srcCompat="@drawable/fragment_home_logo"
                         android:scaleType="fitCenter"
                         android:layout_marginEnd="8dp"
-                        android:contentDescription="logo" />
+                        android:contentDescription="@string/app_logo" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="FloodWatch"
+                        android:text="@string/app_name"
                         android:textColor="#2563EB"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -75,7 +75,7 @@
                 android:id="@+id/textViewStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Loading service area..."
+                android:text="@string/fragment_home_text_1"
                 android:textColor="#5A7A99"
                 android:textSize="12sp"
                 android:layout_marginBottom="6dp" />
@@ -106,7 +106,7 @@
                             android:id="@+id/textViewCondition"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Loading..."
+                            android:text="@string/fragment_home_text_2"
                             android:textColor="#0052FF"
                             android:textSize="32sp"
                             android:textStyle="bold" />
@@ -117,14 +117,14 @@
                             android:layout_height="30dp"
                             android:src="@drawable/ic_rain"
                             android:layout_marginStart="8dp"
-                            android:contentDescription="weather icon" />
+                            android:contentDescription="@string/fragment_home_content_description_3" />
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/textViewTemp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="--°C"
+                        android:text="@string/fragment_home_text_4"
                         android:textColor="#0F2040"
                         android:textSize="38sp"
                         android:textStyle="bold"
@@ -134,7 +134,7 @@
                         android:id="@+id/textViewHumidity"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="--% Humidity"
+                        android:text="@string/fragment_home_text_5"
                         android:textColor="#5A7A99"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -149,7 +149,7 @@
                 app:cardElevation="6dp"
                 android:layout_marginBottom="14dp">
 
-                <com.example.floodwatch.MapTouchRelativeLayout
+                <com.example.floodwatch.ui.MapTouchRelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="#0F2040">
@@ -176,7 +176,7 @@
                         android:paddingTop="7dp"
                         android:paddingEnd="10dp"
                         android:paddingBottom="7dp"
-                        android:text="Elevation: -- m ASL"
+                        android:text="@string/fragment_home_text_6"
                         android:textColor="#1E3A5F"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -190,7 +190,7 @@
                         android:layout_marginEnd="12dp"
                         android:layout_marginBottom="88dp"
                         android:background="@drawable/bg_map_button"
-                        android:contentDescription="Go to my location"
+                        android:contentDescription="@string/fragment_home_content_description_7"
                         android:elevation="6dp"
                         android:padding="10dp"
                         android:src="@drawable/ic_my_location"
@@ -212,7 +212,7 @@
                             android:id="@+id/buttonZoomIn"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:text="+"
+                            android:text="@string/fragment_home_text_8"
                             android:textColor="#1E3A5F"
                             android:textSize="18sp"
                             android:gravity="center"
@@ -229,7 +229,7 @@
                             android:id="@+id/buttonZoomOut"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:text="−"
+                            android:text="@string/fragment_home_text_9"
                             android:textColor="#1E3A5F"
                             android:textSize="18sp"
                             android:gravity="center"
@@ -259,18 +259,18 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Weather Map"
+                                android:text="@string/fragment_home_text_10"
                                 android:textColor="#93AEC8"
-                                android:textSize="9sp"
+                                android:textSize="12sp"
                                 android:letterSpacing="0.08" />
 
                             <TextView
                                 android:id="@+id/textLastUpdated"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Last updated: --"
+                                android:text="@string/fragment_home_text_11"
                                 android:textColor="#93AEC8"
-                                android:textSize="9sp" />
+                                android:textSize="12sp" />
                         </LinearLayout>
 
                         <!-- Layer Toggle Buttons -->
@@ -286,9 +286,9 @@
                                 android:layout_height="32dp"
                                 android:layout_weight="1"
                                 android:layout_marginEnd="4dp"
-                                android:text="🌧 Rain"
+                                android:text="@string/fragment_home_text_12"
                                 android:textColor="#FFFFFF"
-                                android:textSize="10sp"
+                                android:textSize="12sp"
                                 app:backgroundTint="#2563EB"
                                 app:cornerRadius="8dp" />
 
@@ -299,9 +299,9 @@
                                 android:layout_height="32dp"
                                 android:layout_weight="1"
                                 android:layout_marginEnd="4dp"
-                                android:text="🌡 Temp"
+                                android:text="@string/fragment_home_text_13"
                                 android:textColor="#FFFFFF"
-                                android:textSize="10sp"
+                                android:textSize="12sp"
                                 app:backgroundTint="#EF4444"
                                 app:cornerRadius="8dp" />
 
@@ -311,9 +311,9 @@
                                 android:layout_width="0dp"
                                 android:layout_height="32dp"
                                 android:layout_weight="1"
-                                android:text="☁ Cloud"
+                                android:text="@string/fragment_home_text_14"
                                 android:textColor="#FFFFFF"
-                                android:textSize="10sp"
+                                android:textSize="12sp"
                                 app:backgroundTint="#6B7280"
                                 app:cornerRadius="8dp" />
 
@@ -321,7 +321,7 @@
 
                     </LinearLayout>
 
-                </com.example.floodwatch.MapTouchRelativeLayout>
+                </com.example.floodwatch.ui.MapTouchRelativeLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- ── Alert Card ── -->
@@ -350,15 +350,15 @@
                             android:layout_height="22dp"
                             android:layout_alignParentStart="true"
                             android:layout_marginStart="-1dp"
-                            android:contentDescription="warning"
+                            android:contentDescription="@string/fragment_home_content_description_15"
                             android:src="@drawable/ic_warning" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="ACTIVE NOW"
+                            android:text="@string/fragment_home_text_16"
                             android:textColor="#EF4444"
-                            android:textSize="9sp"
+                            android:textSize="12sp"
                             android:textStyle="bold"
                             android:paddingStart="7dp"
                             android:paddingEnd="7dp"
@@ -372,7 +372,7 @@
                         android:id="@+id/textViewAlertTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Rising Water in Downtown"
+                        android:text="@string/fragment_home_text_17"
                         android:textColor="#0F2040"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -382,7 +382,7 @@
                         android:id="@+id/textViewAlertDesc"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Flood levels have increased by 15cm in the last hour. Avoid low-lying parking areas near Main St."
+                        android:text="@string/fragment_home_text_18"
                         android:textColor="#5A7A99"
                         android:textSize="12sp"
                         android:lineSpacingMultiplier="1.4"
@@ -396,7 +396,7 @@
                             android:id="@+id/textViewAlertUpdated"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Updated --"
+                            android:text="@string/fragment_home_text_19"
                             android:textColor="#93AEC8"
                             android:textSize="11sp"
                             android:layout_alignParentStart="true"
@@ -406,7 +406,7 @@
                             android:id="@+id/textViewAlertDetails"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Details"
+                            android:text="@string/fragment_home_text_20"
                             android:textColor="#2563EB"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -456,16 +456,16 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="BASEMENT RISK"
+                                android:text="@string/fragment_home_text_21"
                                 android:textColor="#93AEC8"
-                                android:textSize="10sp"
+                                android:textSize="12sp"
                                 android:letterSpacing="0.05" />
 
                             <TextView
                                 android:id="@+id/textViewRiskLevel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Loading risk..."
+                                android:text="@string/fragment_home_text_22"
                                 android:textColor="#0F2040"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -481,7 +481,7 @@
                             android:id="@+id/textViewRiskArea"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="--"
+                            android:text="@string/fragment_home_text_23"
                             android:textColor="#1E3A5F"
                             android:textSize="13sp"
                             android:layout_alignParentStart="true"
@@ -491,7 +491,7 @@
                             android:id="@+id/textViewStreetStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="--"
+                            android:text="@string/fragment_home_text_24"
                             android:textColor="#22C55E"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -512,7 +512,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Normal"
+                        android:text="@string/fragment_home_text_25"
                         android:textColor="#93AEC8"
                         android:textSize="11sp"
                         android:layout_marginBottom="14dp" />
@@ -523,7 +523,7 @@
                         android:id="@+id/textViewRiskDetails"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Details"
+                        android:text="@string/fragment_home_text_26"
                         android:textColor="#2563EB"
                         android:textSize="13sp"
                         android:textStyle="bold"
@@ -565,7 +565,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="RAINFALL&#10;(1H)"
+                                android:text="@string/fragment_home_text_27"
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
@@ -583,7 +583,7 @@
                                     android:id="@+id/textViewRainfall"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="--"
+                                    android:text="@string/fragment_home_text_28"
                                     android:textColor="#2563EB"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -591,7 +591,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text=" mm"
+                                    android:text="@string/fragment_home_text_29"
                                     android:textColor="#374151"
                                     android:textSize="16sp"
                                     android:layout_gravity="bottom"
@@ -620,7 +620,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="WIND SPEED"
+                                android:text="@string/fragment_home_text_30"
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
@@ -638,7 +638,7 @@
                                     android:id="@+id/textViewWindSpeed"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="--"
+                                    android:text="@string/fragment_home_text_31"
                                     android:textColor="#111827"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -646,7 +646,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text=" km/h"
+                                    android:text="@string/fragment_home_text_32"
                                     android:textColor="#374151"
                                     android:textSize="16sp"
                                     android:layout_gravity="bottom"
@@ -683,7 +683,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="ACTIVE&#10;ALERTS"
+                                android:text="@string/fragment_home_text_33"
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
@@ -701,7 +701,7 @@
                                     android:id="@+id/textViewActiveAlerts"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="00"
+                                    android:text="@string/fragment_home_text_34"
                                     android:textColor="#EF4444"
                                     android:textSize="48sp"
                                     android:textStyle="bold" />
@@ -712,7 +712,7 @@
                                     android:src="@drawable/ic_warning"
                                     app:tint="#EF4444"
                                     android:layout_marginStart="8dp"
-                                    android:contentDescription="alert" />
+                                    android:contentDescription="@string/fragment_home_content_description_35" />
                             </LinearLayout>
 
                         </LinearLayout>
@@ -737,7 +737,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="EVAC.&#10;STATUS"
+                                android:text="@string/fragment_home_text_36"
                                 android:textColor="#6B7280"
                                 android:textSize="11sp"
                                 android:letterSpacing="0.08"
@@ -749,7 +749,7 @@
                                 android:id="@+id/textViewEvacStatus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="--"
+                                android:text="@string/fragment_home_text_37"
                                 android:textColor="#0EA5E9"
                                 android:textSize="24sp"
                                 android:textStyle="bold" />

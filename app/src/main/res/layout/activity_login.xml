@@ -21,12 +21,13 @@
             android:layout_height="40dp"
             android:layout_marginEnd="8dp"
             android:src="@drawable/fragment_home_logo"
+            android:contentDescription="@null"
             android:scaleType="fitCenter" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="FloodWatch"
+            android:text="@string/app_name"
             android:textColor="#1E3A5F"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -36,7 +37,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Welcome back."
+        android:text="@string/activity_login_text_1"
         android:textColor="#0F2040"
         android:textSize="26sp"
         android:textStyle="bold"
@@ -48,7 +49,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:text="Sign in to view flood updates and share reports in Sta. Ana, Taytay, Rizal."
+        android:text="@string/activity_login_text_2"
         android:textColor="#5A7A99"
         android:textSize="13sp"
         android:gravity="center"/>
@@ -73,7 +74,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Email Address"
+                android:text="@string/activity_login_text_3"
                 android:textColor="#1E3A5F"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -98,7 +99,7 @@
                     android:id="@+id/editTextEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="name@organization.com"
+                    android:hint="@string/activity_login_hint_4"
                     android:textColorHint="#40566B"
                     android:inputType="textEmailAddress"
                     android:textColor="#5A6268"
@@ -114,7 +115,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Password"
+                    android:text="@string/activity_login_text_5"
                     android:textColor="#1E3A5F"
                     android:textSize="13sp"
                     android:textStyle="bold"
@@ -124,7 +125,7 @@
                     android:id="@+id/textViewForgot"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Forgot?"
+                    android:text="@string/activity_login_text_6"
                     android:textColor="#2563EB"
                     android:textSize="12sp"
                     android:layout_alignParentEnd="true"
@@ -155,7 +156,7 @@
                     android:id="@+id/editTextPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="••••••••"
+                    android:hint="@string/activity_login_hint_7"
                     android:textColorHint="#40566B"
                     android:inputType="textPassword"
                     android:textColor="#5A6268"
@@ -166,7 +167,7 @@
                 android:id="@+id/checkBoxKeepSigned"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Keep me signed in on this device"
+                android:text="@string/activity_login_text_8"
                 android:textColor="#5A7A99"
                 android:textSize="12sp"
                 android:buttonTint="#2563EB"
@@ -177,7 +178,7 @@
                 android:id="@+id/buttonLogin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Login to Dashboard"
+                android:text="@string/activity_login_text_9"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -198,7 +199,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Don't have an account? "
+            android:text="@string/activity_login_text_10"
             android:textColor="#5A7A99"
             android:textSize="13sp" />
 
@@ -208,7 +209,7 @@
             android:layout_height="match_parent"
             android:clickable="true"
             android:focusable="true"
-            android:text="Sign Up"
+            android:text="@string/activity_login_text_11"
             android:textColor="#2563EB"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -218,9 +219,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="© 2026 TeamBang."
+        android:text="@string/activity_login_text_12"
         android:textColor="#151D22"
-        android:textSize="9sp"
+        android:textSize="12sp"
         android:gravity="center" />
 
 </LinearLayout>

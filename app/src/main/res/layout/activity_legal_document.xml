@@ -52,7 +52,7 @@
         android:layout_marginTop="10dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="16dp"
-        android:text="I Understand"
+        android:text="@string/activity_legal_document_text_1"
         android:textColor="#FFFFFF"
         app:backgroundTint="#2563EB"
         app:cornerRadius="12dp" />

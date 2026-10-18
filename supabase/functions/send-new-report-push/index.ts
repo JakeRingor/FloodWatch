@@ -6,6 +6,21 @@ type FloodReport = {
   address: string | null;
   flood_level: string | null;
   status: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+type DevicePushToken = {
+  token: string;
+  user_id: string;
+};
+
+type HomeZoneProfile = {
+  id: string;
+  home_latitude: number | null;
+  home_longitude: number | null;
+  home_radius_meters: number | null;
+  home_zone_enabled: boolean | null;
 };
 
 type FloodAlert = {
@@ -25,6 +40,23 @@ type WebhookPayload = {
 };
 
 const encoder = new TextEncoder();
+
+function distanceMeters(
+  startLatitude: number,
+  startLongitude: number,
+  endLatitude: number,
+  endLongitude: number,
+): number {
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const latitudeDelta = radians(endLatitude - startLatitude);
+  const longitudeDelta = radians(endLongitude - startLongitude);
+  const startLatitudeRadians = radians(startLatitude);
+  const endLatitudeRadians = radians(endLatitude);
+  const haversine = Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(startLatitudeRadians) * Math.cos(endLatitudeRadians) *
+    Math.sin(longitudeDelta / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, haversine))));
+}
 
 function base64Url(value: Uint8Array | string): string {
   const bytes = typeof value === "string" ? encoder.encode(value) : value;
@@ -178,7 +210,7 @@ Deno.serve(async (request) => {
     );
     let deviceQuery = supabase
       .from("device_push_tokens")
-      .select("token")
+      .select("token,user_id")
       .eq("enabled", true);
     if (isReportStatusUpdate) {
       // Status notifications are private: send only to the report owner.
@@ -186,9 +218,38 @@ Deno.serve(async (request) => {
     } else if (isNewReport) {
       deviceQuery = deviceQuery.neq("user_id", report.user_id);
     }
-    const { data: devices, error } = await deviceQuery;
+    const { data: queriedDevices, error } = await deviceQuery;
     if (error) throw error;
-    if (!devices?.length) return Response.json({ sent: 0 });
+    let devices = (queriedDevices ?? []) as DevicePushToken[];
+
+    // A configured Home Zone narrows new-report alerts to the selected radius.
+    // Accounts without an enabled Home Zone retain the previous all-area behavior.
+    if (isNewReport && devices.length &&
+      typeof report.latitude === "number" && Number.isFinite(report.latitude) &&
+      typeof report.longitude === "number" && Number.isFinite(report.longitude)) {
+      const userIds = [...new Set(devices.map(({ user_id }) => user_id))];
+      const { data: profileRows, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("id,home_latitude,home_longitude,home_radius_meters,home_zone_enabled")
+        .in("id", userIds);
+      if (profileError) throw profileError;
+      const profiles = new Map(
+        ((profileRows ?? []) as HomeZoneProfile[]).map((profile) => [profile.id, profile]),
+      );
+      devices = devices.filter(({ user_id }) => {
+        const profile = profiles.get(user_id);
+        if (!profile?.home_zone_enabled) return true;
+        if (profile.home_latitude == null || profile.home_longitude == null) return false;
+        const radius = Math.min(10_000, Math.max(250, profile.home_radius_meters ?? 2_000));
+        return distanceMeters(
+          profile.home_latitude,
+          profile.home_longitude,
+          report.latitude!,
+          report.longitude!,
+        ) <= radius;
+      });
+    }
+    if (!devices.length) return Response.json({ sent: 0 });
 
     const accessToken = await getGoogleAccessToken(serviceAccount);
     const alert = payload.record as FloodAlert;

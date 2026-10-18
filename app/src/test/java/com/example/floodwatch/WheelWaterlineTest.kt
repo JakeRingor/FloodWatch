@@ -1,5 +1,7 @@
 package com.example.floodwatch
 
+import com.example.floodwatch.ml.WheelWaterline
+
 import org.junit.Assert.*
 import org.junit.Test
 

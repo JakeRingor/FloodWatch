@@ -4,26 +4,26 @@
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/ic_dashboard"
-        android:title="Dashboard" />
+        android:title="@string/dashboard" />
 
     <item
         android:id="@+id/navigation_report"
         android:icon="@drawable/ic_report"
-        android:title="Report" />
+        android:title="@string/report" />
 
     <item
         android:id="@+id/navigation_alerts"
         android:icon="@drawable/ic_alerts"
-        android:title="Alerts" />
+        android:title="@string/alerts" />
 
     <item
         android:id="@+id/navigation_my_reports"
         android:icon="@drawable/ic_report_card"
-        android:title="My Reports" />
+        android:title="@string/my_reports" />
 
     <item
         android:id="@+id/navigation_profile"
         android:icon="@drawable/ic_profile"
-        android:title="Profile" />
+        android:title="@string/profile" />
 
 </menu>

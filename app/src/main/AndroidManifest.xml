@@ -11,8 +11,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".FloodWatchApplication"
-        android:allowBackup="true"
+        android:name=".core.FloodWatchApplication"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/floodwatch_launcher"
@@ -35,7 +35,7 @@
             android:value="new_flood_reports" />
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".ui.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -54,7 +54,7 @@
         </activity>
 
         <activity
-            android:name=".ResetPasswordActivity"
+            android:name=".ui.ResetPasswordActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -67,28 +67,27 @@
         </activity>
 
         <activity
-            android:name=".SignupActivity"
+            android:name=".ui.SignupActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".LegalDocumentActivity"
+            android:name=".ui.LegalDocumentActivity"
             android:exported="false" />
-        <activity android:name=".HomeActivity" android:exported="false" />
+        <activity android:name=".ui.HomeActivity" android:exported="false" />
 
         <service
-            android:name=".FloodWatchMessagingService"
+            android:name=".notification.FloodWatchMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
         <activity
-            android:name=".CameraCaptureActivity"
+            android:name=".ui.CameraCaptureActivity"
             android:exported="false"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.FloodWatch" />
         <activity
-            android:name=".ForgotPasswordActivity"
+            android:name=".ui.ForgotPasswordActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 

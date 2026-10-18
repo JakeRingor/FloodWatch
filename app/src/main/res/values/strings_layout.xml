@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="activity_forgot_password_text_1" formatted="false">Forgot password.</string>
+    <string name="activity_forgot_password_text_2" formatted="false">Enter your registered email address and we\'ll send you a link to reset your password.</string>
+    <string name="activity_forgot_password_text_3" formatted="false">Email Address</string>
+    <string name="activity_forgot_password_hint_4" formatted="false">name@organization.com</string>
+    <string name="activity_forgot_password_text_5" formatted="false">Send Reset Link</string>
+    <string name="activity_forgot_password_text_6" formatted="false">✓</string>
+    <string name="activity_forgot_password_text_7" formatted="false">Check your inbox!</string>
+    <string name="activity_forgot_password_text_8" formatted="false">We sent a password reset link to your email. Check your spam folder if you don\'t see it.</string>
+    <string name="activity_forgot_password_text_9" formatted="false">Back to Login</string>
+    <string name="activity_forgot_password_text_10" formatted="false">Remember your password? </string>
+    <string name="activity_forgot_password_text_11" formatted="false">Log In</string>
+    <string name="activity_forgot_password_text_12" formatted="false">© 2026 TeamBang.</string>
+    <string name="activity_legal_document_text_1" formatted="false">I Understand</string>
+    <string name="activity_login_text_1" formatted="false">Welcome back.</string>
+    <string name="activity_login_text_2" formatted="false">Sign in to view flood updates and share reports in Sta. Ana, Taytay, Rizal.</string>
+    <string name="activity_login_text_3" formatted="false">Email Address</string>
+    <string name="activity_login_hint_4" formatted="false">name@organization.com</string>
+    <string name="activity_login_text_5" formatted="false">Password</string>
+    <string name="activity_login_text_6" formatted="false">Forgot?</string>
+    <string name="activity_login_hint_7" formatted="false">••••••••</string>
+    <string name="activity_login_text_8" formatted="false">Keep me signed in on this device</string>
+    <string name="activity_login_text_9" formatted="false">Login to Dashboard</string>
+    <string name="activity_login_text_10" formatted="false">Don\'t have an account? </string>
+    <string name="activity_login_text_11" formatted="false">Sign Up</string>
+    <string name="activity_login_text_12" formatted="false">© 2026 TeamBang.</string>
+    <string name="activity_reset_password_text_1" formatted="false">Reset Password.</string>
+    <string name="activity_reset_password_text_2" formatted="false">Create a new password to regain access to your FloodWatch account.</string>
+    <string name="activity_reset_password_text_3" formatted="false">Verifying reset link…</string>
+    <string name="activity_reset_password_text_4" formatted="false">New Password</string>
+    <string name="activity_reset_password_hint_5" formatted="false">Minimum 12 characters</string>
+    <string name="activity_reset_password_text_6" formatted="false">Confirm Password</string>
+    <string name="activity_reset_password_hint_7" formatted="false">Re-enter your new password</string>
+    <string name="activity_reset_password_text_8" formatted="false">Update Password</string>
+    <string name="activity_reset_password_text_9" formatted="false">✓</string>
+    <string name="activity_reset_password_text_10" formatted="false">Password Updated!</string>
+    <string name="activity_reset_password_text_11" formatted="false">Your password has been successfully updated. Redirecting to login…</string>
+    <string name="activity_reset_password_text_12" formatted="false">Back to Login</string>
+    <string name="activity_reset_password_text_13" formatted="false">© 2026 TeamBang.</string>
+    <string name="activity_signup_text_1" formatted="false">Create account.</string>
+    <string name="activity_signup_text_2" formatted="false">Join FloodWatch to access real-time flood risk monitoring and alerts.</string>
+    <string name="activity_signup_text_3" formatted="false">Full Name</string>
+    <string name="activity_signup_hint_4" formatted="false">Name</string>
+    <string name="activity_signup_text_5" formatted="false">Phone Number</string>
+    <string name="activity_signup_hint_6" formatted="false">number</string>
+    <string name="activity_signup_text_7" formatted="false">Email Address</string>
+    <string name="activity_signup_hint_8" formatted="false">name@organization.com</string>
+    <string name="activity_signup_text_9" formatted="false">Password</string>
+    <string name="activity_signup_hint_10" formatted="false">••••••••</string>
+    <string name="activity_signup_text_11" formatted="false">Confirm Password</string>
+    <string name="activity_signup_hint_12" formatted="false">••••••••</string>
+    <string name="activity_signup_content_description_13" formatted="false">Accept Terms of Service and Privacy Policy</string>
+    <string name="activity_signup_text_14" formatted="false">I agree to the Terms of Service and Privacy Policy</string>
+    <string name="activity_signup_text_15" formatted="false">Create Account</string>
+    <string name="activity_signup_text_16" formatted="false">Already have an account? </string>
+    <string name="activity_signup_text_17" formatted="false">Log In</string>
+    <string name="activity_signup_text_18" formatted="false">© 2026 TeamBang.</string>
+    <string name="fragment_alerts_text_1" formatted="false">📢 Flood Alerts</string>
+    <string name="fragment_alerts_text_2" formatted="false">No active alerts.</string>
+    <string name="fragment_alerts_text_3" formatted="false">📋 Verified Flood Reports</string>
+    <string name="fragment_alerts_text_4" formatted="false">No verified reports yet.</string>
+    <string name="fragment_home_text_1" formatted="false">Loading service area...</string>
+    <string name="fragment_home_text_2" formatted="false">Loading...</string>
+    <string name="fragment_home_content_description_3" formatted="false">weather icon</string>
+    <string name="fragment_home_text_4" formatted="false">--°C</string>
+    <string name="fragment_home_text_5" formatted="false">--% Humidity</string>
+    <string name="fragment_home_text_6" formatted="false">Elevation: -- m ASL</string>
+    <string name="fragment_home_content_description_7" formatted="false">Go to my location</string>
+    <string name="fragment_home_text_8" formatted="false">+</string>
+    <string name="fragment_home_text_9" formatted="false">−</string>
+    <string name="fragment_home_text_10" formatted="false">Weather Map</string>
+    <string name="fragment_home_text_11" formatted="false">Last updated: --</string>
+    <string name="fragment_home_text_12" formatted="false">🌧 Rain</string>
+    <string name="fragment_home_text_13" formatted="false">🌡 Temp</string>
+    <string name="fragment_home_text_14" formatted="false">☁ Cloud</string>
+    <string name="fragment_home_content_description_15" formatted="false">warning</string>
+    <string name="fragment_home_text_16" formatted="false">ACTIVE NOW</string>
+    <string name="fragment_home_text_17" formatted="false">Rising Water in Downtown</string>
+    <string name="fragment_home_text_18" formatted="false">Flood levels have increased by 15cm in the last hour. Avoid low-lying parking areas near Main St.</string>
+    <string name="fragment_home_text_19" formatted="false">Updated --</string>
+    <string name="fragment_home_text_20" formatted="false">Details</string>
+    <string name="fragment_home_text_21" formatted="false">BASEMENT RISK</string>
+    <string name="fragment_home_text_22" formatted="false">Loading risk...</string>
+    <string name="fragment_home_text_23" formatted="false">--</string>
+    <string name="fragment_home_text_24" formatted="false">--</string>
+    <string name="fragment_home_text_25" formatted="false">Normal</string>
+    <string name="fragment_home_text_26" formatted="false">Details</string>
+    <string name="fragment_home_text_27" formatted="false">RAINFALL&#10;(1H)</string>
+    <string name="fragment_home_text_28" formatted="false">--</string>
+    <string name="fragment_home_text_29" formatted="false"> mm</string>
+    <string name="fragment_home_text_30" formatted="false">WIND SPEED</string>
+    <string name="fragment_home_text_31" formatted="false">--</string>
+    <string name="fragment_home_text_32" formatted="false"> km/h</string>
+    <string name="fragment_home_text_33" formatted="false">ACTIVE&#10;ALERTS</string>
+    <string name="fragment_home_text_34" formatted="false">00</string>
+    <string name="fragment_home_content_description_35" formatted="false">alert</string>
+    <string name="fragment_home_text_36" formatted="false">EVAC.&#10;STATUS</string>
+    <string name="fragment_home_text_37" formatted="false">--</string>
+    <string name="fragment_my_reports_text_1" formatted="false">My Reports</string>
+    <string name="fragment_my_reports_text_2" formatted="false">Track the status of your flood reports</string>
+    <string name="fragment_my_reports_text_3" formatted="false">All</string>
+    <string name="fragment_my_reports_text_4" formatted="false">Pending</string>
+    <string name="fragment_my_reports_text_5" formatted="false">Verified</string>
+    <string name="fragment_my_reports_text_6" formatted="false">Dismissed</string>
+    <string name="fragment_my_reports_text_7" formatted="false">Needs attention</string>
+    <string name="fragment_my_reports_text_8" formatted="false">Withdrawn</string>
+    <string name="fragment_my_reports_text_9" formatted="false">Refresh</string>
+    <string name="fragment_my_reports_text_10" formatted="false">You have not submitted any reports yet.</string>
+    <string name="fragment_my_reports_text_11" formatted="false">Load more</string>
+    <string name="fragment_report_text_1" formatted="false">Report Flood Incident</string>
+    <string name="fragment_report_text_2" formatted="false">Your report helps emergency responders and citizens stay informed.</string>
+    <string name="fragment_report_text_3" formatted="false">Auto-detect My Location</string>
+    <string name="fragment_report_text_4" formatted="false">CURRENT ADDRESS</string>
+    <string name="fragment_report_text_5" formatted="false">Detecting location...</string>
+    <string name="fragment_report_text_6" formatted="false">FLOOD DEPTH / PARAMETER</string>
+    <string name="fragment_report_text_7" formatted="false">0-5 cm - Passable</string>
+    <string name="fragment_report_text_8" formatted="false">6-15 cm - Motorcycles not advised</string>
+    <string name="fragment_report_text_9" formatted="false">16-30 cm - Small cars not advised</string>
+    <string name="fragment_report_text_10" formatted="false">31-50 cm - Only large vehicles</string>
+    <string name="fragment_report_text_11" formatted="false">50+ cm - Not passable</string>
+    <string name="fragment_report_text_12" formatted="false">0-5 cm: Passable</string>
+    <string name="fragment_report_text_13" formatted="false">Capture Visual Proof</string>
+    <string name="fragment_report_content_description_14" formatted="false">Photo selected for this flood report</string>
+    <string name="fragment_report_text_15" formatted="false">Open Camera</string>
+    <string name="fragment_report_text_16" formatted="false">Upload Image</string>
+    <string name="fragment_report_text_17" formatted="false">Submit Flood Report</string>
+</resources>

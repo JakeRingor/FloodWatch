@@ -11,7 +11,7 @@
         android:id="@+id/myReportsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="My Reports"
+        android:text="@string/fragment_my_reports_text_1"
         android:textColor="#0F2040"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -21,7 +21,7 @@
         android:id="@+id/myReportsSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Track the status of your flood reports"
+        android:text="@string/fragment_my_reports_text_2"
         android:textColor="#5A7A99"
         android:textSize="13sp"
         android:layout_marginBottom="14dp" />
@@ -46,42 +46,42 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="All" />
+                android:text="@string/fragment_my_reports_text_3" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterPending"
                 style="@style/MyReportsFilterChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Pending" />
+                android:text="@string/fragment_my_reports_text_4" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterVerified"
                 style="@style/MyReportsFilterChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Verified" />
+                android:text="@string/fragment_my_reports_text_5" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterDismissed"
                 style="@style/MyReportsFilterChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Dismissed" />
+                android:text="@string/fragment_my_reports_text_6" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterIssues"
                 style="@style/MyReportsFilterChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Needs attention" />
+                android:text="@string/fragment_my_reports_text_7" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterWithdrawn"
                 style="@style/MyReportsFilterChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Withdrawn" />
+                android:text="@string/fragment_my_reports_text_8" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
@@ -91,7 +91,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:text="Refresh" />
+        android:text="@string/fragment_my_reports_text_9" />
 
     <ProgressBar
         android:id="@+id/myReportsLoading"
@@ -105,7 +105,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="You have not submitted any reports yet."
+        android:text="@string/fragment_my_reports_text_10"
         android:textColor="#5A7A99"
         android:textSize="15sp"
         android:padding="32dp"
@@ -124,7 +124,7 @@
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Load more"
+        android:text="@string/fragment_my_reports_text_11"
         android:visibility="gone" />
 
 </LinearLayout>

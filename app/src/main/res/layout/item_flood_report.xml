@@ -86,6 +86,7 @@
             android:layout_height="180dp"
             android:scaleType="centerCrop"
             android:visibility="gone"
+            android:contentDescription="@string/flood_report_photo"
             android:background="#F0F4F8" />
 
         <com.google.android.material.button.MaterialButton
@@ -94,7 +95,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Withdraw report"
+            android:text="@string/withdraw_report"
             android:textColor="#B91C1C"
             android:visibility="gone"
             app:strokeColor="#B91C1C" />
